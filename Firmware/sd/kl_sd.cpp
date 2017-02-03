@@ -10,7 +10,7 @@
 #include "sdc_lld.h"
 #include <string.h>
 #include <stdlib.h>
-#include "kl_lib.h"
+#include "kl_lib_f2xx.h"
 
 sd_t SD;
 extern Semaphore semSDRW;
@@ -30,7 +30,7 @@ void sd_t::Init() {
     // Power pin
 //    PinSetupOut(GPIOC, 4, omPushPull, pudNone);
 //    PinClear(GPIOC, 4); // Power on
-    chThdSleepMilliseconds(270);    // Let power to stabilize
+//    chThdSleepMilliseconds(270);    // Let power to stabilize
 
     FRESULT err;
     sdcInit();
@@ -84,7 +84,7 @@ uint8_t iniFile_t::ReadString(const char *ASection, const char *AKey, char **PPO
         if((*StartP != '[') or (*StartP == ';') or (*StartP == '#')) continue;
         EndP = strchr(StartP, ']');
         if((EndP == NULL) or ((int32_t)(EndP-StartP-1) != len)) continue;
-    } while (strncmp(StartP+1, ASection, len) != 0);
+    } while (strnicmp(StartP+1, ASection, len) != 0);
 
     // Section found, find the key
     len = strlen(AKey);
@@ -97,7 +97,7 @@ uint8_t iniFile_t::ReadString(const char *ASection, const char *AKey, char **PPO
         if((*StartP == ';') or (*StartP == '#')) continue;
         EndP = strchr(StartP, '=');
         if(EndP == NULL) continue;
-    } while(((int32_t)(skiptrailing(EndP, StartP)-StartP) != len or strncmp(StartP, AKey, len) != 0));
+    } while(((int32_t)(skiptrailing(EndP, StartP)-StartP) != len or strnicmp(StartP, AKey, len) != 0));
 
     // Process Key's value
     StartP = skipleading(EndP + 1);

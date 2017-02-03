@@ -389,7 +389,6 @@ enum ExtTrigPsc_t {etpOff=0x0000, etpDiv2=0x1000, etpDiv4=0x2000, etpDiv8=0x3000
 class Timer_t {
 protected:
     TIM_TypeDef* ITmr;
-    uint32_t *PClk;         // for STM32F2XX and STM32F4XX
 public:
     Timer_t(TIM_TypeDef *APTimer) : ITmr(APTimer) {}
     void Init() const;
@@ -402,7 +401,6 @@ public:
     uint32_t GetTopValue() const { return ITmr->ARR; }
     void EnableArrBuffering()  const { ITmr->CR1 |=  TIM_CR1_ARPE; }
     void DisableArrBuffering() const { ITmr->CR1 &= ~TIM_CR1_ARPE; }
-    void SetupPrescaler(uint32_t PrescaledFreqHz) const;
     void SetCounter(uint32_t Value) const { ITmr->CNT = Value; }
     uint32_t GetCounter() const { return ITmr->CNT; }
     // Master/Slave
