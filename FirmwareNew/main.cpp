@@ -59,7 +59,7 @@ int main() {
     // Setup outputs
 //    PinSetupOut(StayAwake_GPIO, StayAwake_PIN, omPushPull, pudNone);
 
-    // ==== Main cycle ====
+    // ===== Main cycle =====
     App.ITask();
 }
 
