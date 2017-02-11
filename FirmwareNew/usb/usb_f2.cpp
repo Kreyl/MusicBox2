@@ -292,7 +292,7 @@ EpState_t Usb_t::DefaultReqHandler(uint8_t **PPtr, uint32_t *PLen) {
                 IsReady = true;
                 if(PThread != nullptr) {
                     chSysLockFromISR();
-                    chEvtSignalI(PThread, EVTMSK_USB_READY);
+                    chEvtSignalI(PThread, EVT_USB_READY);
                     chSysUnlockFromISR();
                 }
                 return esOutStatus;

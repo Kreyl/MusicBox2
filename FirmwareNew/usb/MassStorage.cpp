@@ -73,7 +73,7 @@ void MassStorage_t::Reset() {
 __attribute__((__noreturn__))
 void MassStorage_t::UsbOutTask() {
     while(true) {
-        if(!Usb.IsReady) chEvtWaitAny(EVTMSK_USB_READY);
+        if(!Usb.IsReady) chEvtWaitAny(EVT_USB_READY);
         // Receive header
         Usb.PEpBulkOut->StartReceiveToBuf((uint8_t*)&CmdBlock, MS_CMD_SZ);
         uint8_t rslt = Usb.PEpBulkOut->WaitUntilReady();

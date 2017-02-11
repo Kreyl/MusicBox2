@@ -240,7 +240,7 @@ public:
     }
     void CallbackHandler() {    // Call it inside callback
         chSysLockFromISR();
-        chSysUnlock()
+//        chSysUnlock()
         chEvtSignalI(PThread, EvtMsk);
         if(TmrType == tktPeriodic) StartI();
         chSysUnlockFromISR();
@@ -266,11 +266,13 @@ static inline void RandomSeed(unsigned int Seed) { srand(Seed); }
 #endif
 #endif
 
-#if 0 // =========================== Time ======================================
+#if 1 // =========================== Time ======================================
 static inline bool TimeElapsed(systime_t *PSince, uint32_t Delay_ms) {
     chSysLock();
-    bool Rslt = (chVTGetSystemTimeX() - *PSince) > MS2ST(Delay_ms);
-    if(Rslt) *PSince = chVTGetSystemTimeX();
+    bool Rslt = (systime_t)(chTimeNow() - *PSince) > MS2ST(Delay_ms);
+    if(Rslt) *PSince = chTimeNow();
+//    bool Rslt = (chVTGetSystemTimeX() - *PSince) > MS2ST(Delay_ms);
+//    if(Rslt) *PSince = chVTGetSystemTimeX();
     chSysUnlock();
     return Rslt;
 }
@@ -501,6 +503,10 @@ __always_inline
 static inline void PinSetHi(GPIO_TypeDef *PGpio, uint16_t APin) { PGpio->BSRRL = (1 << APin); }
 __always_inline
 static inline void PinSetLo(GPIO_TypeDef *PGpio, uint16_t APin) { PGpio->BSRRH = (1 << APin); }
+__always_inline
+static inline void PinSet(GPIO_TypeDef *PGpio, uint16_t APin) { PGpio->BSRRL = (1 << APin); }
+__always_inline
+static inline void PinClear(GPIO_TypeDef *PGpio, uint16_t APin) { PGpio->BSRRH = (1 << APin); }
 
 #elif defined STM32F0XX || defined STM32F10X_LD_VL || defined STM32L4XX
 __always_inline

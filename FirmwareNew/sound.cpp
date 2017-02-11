@@ -70,7 +70,7 @@ void Sound_t::ITask() {
             if(IFilename != NULL) IPlayNew();
             else {
 //                AmpfOff();    // switch off the amplifier to save energy
-                if(IPAppThd != nullptr) chEvtSignal(IPAppThd, EVTMSK_PLAY_ENDS);  // Raise event if nothing to play
+                if(IPAppThd != nullptr) chEvtSignal(IPAppThd, EVT_PLAY_ENDS);  // Raise event if nothing to play
             }
         }
         // Stop request
@@ -195,9 +195,9 @@ void Sound_t::IPlayNew() {
 void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
     VsCmd_t FCmd;
     chSysLock();
-    FCmd.PACKED.OpCode = VS_WRITE_OPCODE;
-    FCmd.PACKED.Address = AAddr;
-    FCmd.PACKED.Data = __REV16(AData);
+    FCmd.OpCode = VS_WRITE_OPCODE;
+    FCmd.Address = AAddr;
+    FCmd.Data = __REV16(AData);
     // Add cmd to queue
 //    chMBPost(&CmdBox, FCmd.Msg, TIME_INFINITE);
     chMBPostI(&CmdBox, FCmd.Msg);
@@ -276,16 +276,6 @@ void Sound_t::ISendNextData() {
             if(!IDreq.IsHi()) IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
             else IDmaIdle = true;
     } // switch
-}
-
-void Sound_t::StartTransmissionIfNotBusy() {
-    chSysLock();
-    if(IDmaIdle and IDreq.IsHi()) {
-//            Uart.PrintfI("\rTXinB");
-        IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
-        IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
-    }
-    chSysUnlock();
 }
 
 void Sound_t::PrepareToStop() {

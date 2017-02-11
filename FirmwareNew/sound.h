@@ -81,12 +81,13 @@ union VsCmd_t {
         uint8_t OpCode;
         uint8_t Address;
         uint16_t Data;
-    } PACKED;
+    } __packed;
     msg_t Msg;
 };
 
 
 #define VS_VOLUME_STEP          4
+#define VS_VOLUME_STEP_BIG      10
 #define VS_INITIAL_ATTENUATION  0x33
 #define VS_CMD_BUF_SZ           4       // Number of cmds in buf
 #define VS_DATA_BUF_SZ          4096    // bytes. Must be multiply of 512.
@@ -112,6 +113,9 @@ struct VsBuf_t {
 #define VS_EVT_DREQ_IRQ     (eventmask_t)16
 
 
+extern PinIrq_t IDreq;
+extern  Spi_t ISpi;
+
 class Sound_t {
 private:
     msg_t CmdBuf[VS_CMD_BUF_SZ];
@@ -124,7 +128,7 @@ private:
     int16_t IAttenuation;
     const char* IFilename;
     uint32_t IStartPosition;
-    Thread *IPAppThd;
+    thread_t *IPAppThd;
     // Pin operations
     inline void Rst_Lo()   { PinSetLo(VS_GPIO, VS_RST); }
     inline void Rst_Hi()   { PinSetHi(VS_GPIO, VS_RST); }
@@ -136,7 +140,15 @@ private:
     uint8_t CmdRead(uint8_t AAddr, uint16_t *AData);
     uint8_t CmdWrite(uint8_t AAddr, uint16_t AData);
     void AddCmd(uint8_t AAddr, uint16_t AData);
-    inline void StartTransmissionIfNotBusy();
+    inline void StartTransmissionIfNotBusy() {
+        chSysLock();
+        if(IDmaIdle and IDreq.IsHi()) {
+//            Uart.PrintfI("\rTXinB");
+            IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
+            IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
+        }
+        chSysUnlock();
+    }
     void PrepareToStop();
     void SendZeroes();
     void IPlayNew();
@@ -172,6 +184,15 @@ public:
         IAttenuation += VS_VOLUME_STEP;
         if(IAttenuation > 0x8F) IAttenuation = 0x8F;
         AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
+    }    void VolumeIncreaseBig() {
+        IAttenuation -= VS_VOLUME_STEP_BIG;
+        if(IAttenuation < 0) IAttenuation = 0;
+        AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
+    }
+    void VolumeDecreaseBig() {
+        IAttenuation += VS_VOLUME_STEP_BIG;
+        if(IAttenuation > 0x8F) IAttenuation = 0x8F;
+        AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
     }
     void RegisterAppThd(Thread *PThd) { IPAppThd = PThd; }
 
@@ -181,7 +202,7 @@ public:
     void AmpfOff() { PinSetLo(VS_AMPF_GPIO, VS_AMPF_PIN); }
 #endif
     // Inner use
-    Thread *PThread;
+    thread_t *PThread;
     void IrqDreqHandler();
     void ITask();
     void ISendNextData();

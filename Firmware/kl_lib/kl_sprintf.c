@@ -92,6 +92,7 @@ uint32_t kl_vsprintf(ftVoidChar PPutChar, uint32_t MaxLength, const char *format
 
             case 'X': IPutUint(va_arg(args, uint32_t), 16); break;
             case 'u': IPutUint(va_arg(args, uint32_t), 10); break;
+            case 'b': IPutUint(va_arg(args, uint32_t), 2); break;
 
             case 'd':
             case 'i':

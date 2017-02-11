@@ -24,7 +24,6 @@ static systime_t LongPressTimer;
 static bool IsRepeating[BUTTONS_CNT];
 static systime_t RepeatTimer;
 #endif
-//static systime_t RepeatTimer, LongPressTimer;
 #if BTN_COMBO
     bool IsCombo;
 #endif
@@ -66,7 +65,7 @@ void ProcessButtons(PinSnsState_t *BtnState, uint32_t Len) {
             // Single key pressed, no combo
             AddEvtToQueue(bePress, i);  // Add single keypress
 #if BTN_LONGPRESS
-            LongPressTimer = chVTGetSystemTimeX();
+            LongPressTimer = chTimeNow();
 #endif
 #if BTN_REPEAT
             RepeatTimer = chTimeNow();
@@ -104,7 +103,7 @@ void ProcessButtons(PinSnsState_t *BtnState, uint32_t Len) {
 #if BTN_LONGPRESS // Check if long press
             if(!IsLongPress[i]) {
 //                Uart.Printf("Elapsed %u\r", chVTTimeElapsedSinceX(LongPressTimer));
-                if(chVTTimeElapsedSinceX(LongPressTimer) >= MS2ST(BTN_LONGPRESS_DELAY_MS)) {
+                if(TimeElapsed(&LongPressTimer, BTN_LONGPRESS_DELAY_MS)) {
                     IsLongPress[i] = true;
                     AddEvtToQueue(beLongPress, i);
                 }

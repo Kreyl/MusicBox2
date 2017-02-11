@@ -16,7 +16,6 @@
 #include "kl_sd.h"
 #include "ff.h"
 #include "MassStorage.h"
-#include "adc_f2.h"
 #include "kl_adc.h"
 #include "battery_consts.h"
 #include "board.h"
@@ -31,8 +30,6 @@ private:
     thread_t *PThread; // Main thread
 //    void EnterState(AppState_t NewState);
 //    AppState_t SystemState = asDefault;
-    //  === ===
-//    VirtualTimer IOpenK1KorTmr;
 
 public:
     void InitThread() { PThread = chThdGetSelfX(); } //chThdSelf()

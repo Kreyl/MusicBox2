@@ -8,6 +8,7 @@
 #pragma once
 
 #include "inttypes.h"
+#include "uart.h"
 #include <sys/cdefs.h>
 
 // Mixing two colors

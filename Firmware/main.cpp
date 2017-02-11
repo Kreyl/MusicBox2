@@ -11,18 +11,24 @@
 #include "Soundlist.h"
 #include "SimpleSensors.h"
 #include "buttons.h"
-//#include "Sequences.h"
+#include "led.h"
+#include "Sequences.h"
+#include "SteppingMotor.h"
 //#include "WS2812BforSPI.h"
 //#include "WS2812BforTMR.h"
-//#include "adc_f2.h"
 
 App_t App;
+TmrKL_t TmrVolUpBig {MS2ST(1000), EVT_TMR_BigVolUp, tktPeriodic};
+TmrKL_t TmrVolDownBig {MS2ST(1000), EVT_TMR_BigVolDown, tktPeriodic};
 SndList_t SndList;
 Periphy_t Periphy;
+//PinInput_t WKUPpin(WKUP_pin);
 PinInput_t ExternalPWR(ExternalPWR_Pin);
 PinInput_t Box1Opened(Sensor1_Pin);
 PinInput_t Box2Opened(Sensor2_Pin);
 PinOutput_t BattMeasureSW(BattMeasSW_Pin);
+SteppingMotor_t Motor(MotorPins, MotorSHDN, MotorAngle, MotorRatio);
+LedSmooth_t Backlight(LED_PIN);
 
 
 // =============================== Main ========================================
@@ -54,13 +60,19 @@ int main() {
     MassStorage.Init();
 
     // Battery: ADC
-    Adc.Init();
+    PinSetupAnalog(BattMeas_Pin);
     BattMeasureSW.Init();
     BattMeasureSW.SetHi();
-    PinSetupAnalog(BattMeas_Pin);
+    Adc.Init();
+    Adc.EnableVref();
+
+    // Virtual timers
+    TmrVolUpBig.Init();
+    TmrVolDownBig.Init();
 
     // Setup inputs
     PinSensors.Init();
+//    WKUPpin.Init();
     // Setup outputs
     Periphy.InitSwich();
 
@@ -73,10 +85,18 @@ int main() {
 void App_t::PowerON() {
     Periphy.ON();
     chThdSleepMilliseconds(300);    // Let power to stabilize
-    SD.Init();      // No Delay power
+    SD.Init();      // No power delay
+    // Sound
     Sound.AmpfOn();
     Sound.Init();
-    Sound.RegisterAppThd(chThdSelf());
+    Sound.RegisterAppThd(chThdGetSelfX());
+    // Stepping Motor
+    Motor.Init(pdNoDelay);
+    Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
+    // LED
+    Backlight.Init();
+//    Backlight.SetBrightness(0);
+    Backlight.SetPwmFrequencyHz(1000);
 
     if(Sleep::WasInStandby()) {
         Uart.Printf("\rWasStandby"); // WakeUp
@@ -85,16 +105,23 @@ void App_t::PowerON() {
         SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
         Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
 //        Uart.Printf("\r Load TrackNumber: %u", BackupSpc::ReadBackupRegister(TrackNumberBKP));
-        BackupSpc::DisableBackupAccess();
+        BackupSpc::DisableAccess();
     }
     else {
         Uart.Printf("\rPowerON");
-        Sound.SetVolume(200);
+        Sound.SetVolume(DEF_VolLevel);
     }
-
-    SndList.PlayRandomFileFromDir("0:\\");
+    if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
+        SndList.PlayRandomFileFromDir("0:\\");
+        Motor.Start();
+        Backlight.StartOrContinue(lsqFadeIn);
+    }
+    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
+    else ShutDown();
 }
 
+
+//* TmrCheckBtn.InitAndStart(chThdGetSelfX());
 __attribute__ ((__noreturn__))
 void App_t::ITask() {
 
@@ -105,9 +132,7 @@ void App_t::ITask() {
         if (Rslt == FR_NO_FILE) Uart.Printf("\r%S: not found", "ID_Store.ini");
         else Uart.Printf("\r%S: openFile error: %u", "ID_Store.ini", Rslt);
      }
-    chThdSleepMilliseconds(999);
 #endif
-
 
 while(true) {
 //    eventmask_t EvtMsk = chEvtWaitAnyTimeout(EVT_PLAY_ENDS, MS2ST(306));
@@ -127,29 +152,36 @@ while(true) {
                 switch(EInfo.BtnID[0]) {
                     case VolUpIndex:
                         Sound.VolumeIncrease();
+//                        Uart.Printf("\r BTN 1 up");
                         break;
                     case VolDownIndex:
                         Sound.VolumeDecrease();
+//                        Uart.Printf("\r BTN 2 dovn");
                         break;
                 }
             }
             else if(EInfo.Type == beLongPress) {
                 switch(EInfo.BtnID[0]) {
                     case VolUpIndex:
-                        Sound.VolumeIncrease();
+                        TmrVolUpBig.Start();
                         break;
                     case VolDownIndex:
-                        Sound.VolumeDecrease();
+                        TmrVolDownBig.Start();
                         break;
                 }
             }
             else if(EInfo.Type == beRelease) {
-//                Uart.Printf("\r Release");
-//                Uart.Printf("\r BtnID %u", EInfo.BtnID[0]);
+                TmrVolUpBig.Stop();
+                TmrVolDownBig.Stop();
             }
         }
     }
-
+    if(EvtMsk & EVT_TMR_BigVolUp) {
+        Sound.VolumeIncreaseBig();
+    }
+    if(EvtMsk & EVT_TMR_BigVolDown) {
+        Sound.VolumeDecreaseBig();
+    }
     if(EvtMsk & EVT_BOX1_CLOSED) {
         if (!Box2Opened.IsHi() and !ExternalPWR.IsHi()){
             ShutDown();
@@ -162,15 +194,17 @@ while(true) {
     }
 
     if(EvtMsk & EVT_ADC_DONE) {
-        uint16_t BatAdc = 2 * Adc.GetResult(BAT_CHNL); // to count R divider
+        uint16_t BatAdc = 2 * (Adc.GetResult(BAT_CHNL) - CallConst); // to count R divider
         uint8_t NewBatPercent = mV2PercentLiIon(BatAdc);
         Uart.Printf("mV=%u; percent=%u\r", BatAdc, NewBatPercent);
-        Adc.DisableVref();
+//        Adc.DisableVref();
     }
 
  // ==== USB connected/disconnected ====
     if(EvtMsk & EVT_USB_CONNECTED) {
         Sound.Stop();
+        Motor.Stop();
+        Backlight.SetBrightness(0);
         chSysLock();
         Clk.SetFreq48Mhz();
         Clk.InitSysTick();
@@ -193,6 +227,8 @@ while(true) {
         else{
             //        SD.Init();
             SndList.PlayRandomFileFromDir("0:\\");
+            Motor.Start();
+            Backlight.StartOrContinue(lsqFadeIn);
         }
     }
 
@@ -215,6 +251,7 @@ void App_t::OnCmd(Shell_t *PShell) {
     else if(PCmd->NameIs("Next")) {
         SndList.PlayRandomFileFromDir("0:\\");
     }
+
     else if(PCmd->NameIs("PerON")) {
         PowerON();
     }
@@ -222,49 +259,59 @@ void App_t::OnCmd(Shell_t *PShell) {
         Sound.Shutdown();
         Periphy.OFF();
     }
+
+    else if(PCmd->NameIs("MotorSetF")) {
+        if(PCmd->GetNextInt32(&Data) == OK) {
+            Uart.Printf("\r Data=%d", Data);
+            Motor.SetSpeed(Data, smFullStep);
+        }
+    }
+    else if(PCmd->NameIs("MotorSetH")) {
+        if(PCmd->GetNextInt32(&Data) == OK) {
+            Uart.Printf("\r Data=%d", Data);
+            Motor.SetSpeed(Data, smHalftep);
+        }
+    }
+    else if(PCmd->NameIs("MotorStart")) {
+        Motor.Start();
+    }
+    else if(PCmd->NameIs("MotorStop")) {
+        Motor.Stop();
+    }
+
     else if(PCmd->NameIs("RUN_ADC")) {
-        Adc.EnableVref();
+//        Adc.EnableVref();
         BattMeasureSW.SetLo(); // Connect R divider to GND
         chThdSleepMicroseconds(100);
         Adc.StartMeasurement();
-//        chEvtWaitAny(EVT_ADC_DONE);
-//        Adc.StartMeasurement();
-
-//        Adc.Measure();
-//        Uart.Printf("\r ADC: = %u", Adc.Result[0]);
-    }
-    else if(PCmd->NameIs("VolS")) {
-        if(PCmd->GetNextInt32(&Data) == OK) {
-            Uart.Printf("\r Data=%d", Data);
-            Sound.SetVolume(Data);
-        }
-    }
-    else if(PCmd->NameIs("VolG")) {
-        Uart.Printf(" GetVolume %u", Sound.GetVolume());
     }
 
     else PShell->Ack(CMD_UNKNOWN);
 }
 
-//* TmrKL_t TmrCheckBtn {MS2ST(54), EVT_BUTTONS, tktPeriodic};
-//* TmrCheckBtn.InitAndStart(chThdGetSelfX());
+
 void App_t::ShutDown() {
 //    Sound.Shutdown();
     Sound.Stop();
+    Motor.Stop();
     chThdSleepMilliseconds(700);
+//    if (!WKUPpin.IsHi()){
     if (!Box1Opened.IsHi() and !Box2Opened.IsHi() and !ExternalPWR.IsHi()){
         chSysLock();
         Uart.PrintfNow("\rShutDown");
         Sound.Shutdown();
+        Backlight.SetBrightness(0);
+//        Motor.Sleep();
         Periphy.OFF();
-        BackupSpc::EnableBackupAccess();
+        BackupSpc::EnableAccess();
         BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber());
         BackupSpc::WriteBackupRegister(VolumeBKP, Sound.GetVolume());
         Sleep::EnableWakeup1Pin();
         Sleep::EnterStandby();
         chSysUnlock();
     }
-//    else
+    else
+        Motor.Start();
 //        SndList.PlayRandomFileFromDir("0:\\");
 }
 

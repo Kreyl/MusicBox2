@@ -28,6 +28,10 @@
 #define TrackNumberBKP    0
 #define VolumeBKP         1
 
+// Default Settings
+#define DEF_MotorSpeed    -16  // [об/мин * 0,1]
+#define DEF_VolLevel      200
+
 #if 1 // ========================== GPIO =======================================
 
 // UART
@@ -37,7 +41,7 @@
 #define UART_AF         AF7 // for USART2 @ GPIOA
 
 // LED
-#define LED_PIN         { GPIOB, 2, TIM2, 2, invNotInverted, omPushPull, 255 }
+#define LED_PIN         { GPIOB, 3, TIM2, 2, invNotInverted, omPushPull, 512 }
 
 // Button
 #define BUTTONS_CNT     2
@@ -50,15 +54,23 @@
 #define BattMeasSW_Pin  { GPIOC, 1, omOpenDrain }
 #define BattMeas_Pin    GPIOC, 0
 
-
 // Vibro
 
 // Beeper
 
+// Stepping Motor
+#define MotorPins       { GPIOB, 6, 7, 8, 9} //6, 7, 8, 9
+#define MotorSHDN       4
+#define MotorAngle      18
+#define MotorRatio      100
+// Max. Starting Frequency    900 PPS
+// Max. Slewing Frequency     1200 PPS
+// Pulse Per Second, т.е импульсов (шагов) за секунду (целых шагов или микрошагов)
+
 // Sensors
 #define Sensor1_Pin     { GPIOB, 0, pudPullDown }
 #define Sensor2_Pin     { GPIOB, 1, pudPullDown }
-//#define WKUP_pin        { GPIOA, 0, pudPullDown }
+#define WKUP_pin        { GPIOA, 0, pudPullDown }
 
 // Switches
 #define PeriphySW_Pin         GPIOC, 14
@@ -96,9 +108,10 @@
 
 //#define ADC_VREFINT_CHNL    17  // All 4xx and F072 devices. Do not change.
 #define ADC_CHANNELS        { BAT_CHNL }//{ BAT_CHNL, ADC_VREFINT_CHNL }
+#define CallConst           450
 #define ADC_CHANNEL_CNT     1   // Do not use countof(AdcChannels) as preprocessor does not know what is countof => cannot check
-#define ADC_SAMPLE_TIME     ast55d5Cycles
-#define ADC_SAMPLE_CNT      8   // How many times to measure every channel
+#define ADC_SAMPLE_TIME     ast239d5Cycles
+#define ADC_SAMPLE_CNT      16   // How many times to measure every channel
 
 #define ADC_MAX_SEQ_LEN     16  // 1...16; Const, see ref man
 #define ADC_SEQ_LEN         (ADC_SAMPLE_CNT * ADC_CHANNEL_CNT)

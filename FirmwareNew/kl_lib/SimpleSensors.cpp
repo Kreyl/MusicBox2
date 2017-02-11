@@ -13,7 +13,7 @@ SimpleSensors_t PinSensors;
 
 // ==== Sensors Thread ====
 static THD_WORKING_AREA(waPinSnsThread, 64);
-__noreturn
+__attribute__((noreturn))
 static void SensorsThread(void *arg) {
     chRegSetThreadName("PinSensors");
     PinSensors.ITask();
@@ -23,13 +23,13 @@ void SimpleSensors_t::Init() {
     // Init pins
     for(uint32_t i=0; i < PIN_SNS_CNT; i++) {
         PinSns[i].Init();
-        States[i] = pssLo;
+        States[i] = pssNone; //pssLo
     }
     // Create and start thread
     chThdCreateStatic(waPinSnsThread, sizeof(waPinSnsThread), (tprio_t)90, (tfunc_t)SensorsThread, NULL);
 }
 
-__noreturn
+__attribute__((noreturn))
 void SimpleSensors_t::ITask() {
     while(true) {
         chThdSleepMilliseconds(SNS_POLL_PERIOD_MS);

@@ -5,8 +5,8 @@
  *      Author: Elessar
  */
 
-#ifndef MUSICBOX2_NEW_MAIN_H_
-#define MUSICBOX2_NEW_MAIN_H_
+#ifndef MAIN_H_
+#define MAIN_H_
 
 #include "ch.h"
 #include "hal.h"
@@ -16,28 +16,20 @@
 #include "kl_sd.h"
 #include "ff.h"
 #include "MassStorage.h"
-#include "adc_f2.h"
+#include "kl_adc.h"
 #include "battery_consts.h"
 #include "board.h"
 
 
-// External Power Input
-#define PWR_EXTERNAL_GPIO   GPIOA
-#define PWR_EXTERNAL_PIN    9
-
-
-enum AppState_t  {
-    asDefault,
-};
+//enum AppState_t  {
+//    asDefault,
+//};
 
 class App_t {
 private:
-    bool WasExternal = false;
     thread_t *PThread; // Main thread
-    void EnterState(AppState_t NewState);
-    AppState_t SystemState = asDefault;
-    //  === ===
-//    VirtualTimer IOpenK1KorTmr;
+//    void EnterState(AppState_t NewState);
+//    AppState_t SystemState = asDefault;
 
 public:
     void InitThread() { PThread = chThdGetSelfX(); } //chThdSelf()
@@ -49,10 +41,30 @@ public:
     void SignalEvtI(eventmask_t Evt) { chEvtSignalI(PThread, Evt); }
     void OnCmd(Shell_t *PShell);
     // Inner use
-    inline bool ExternalPwrOn() { return  PinIsHi(PWR_EXTERNAL_GPIO, PWR_EXTERNAL_PIN); }
+
+    void PowerON();
+    void ShutDown();
     void ITask();
 };
 extern App_t App;
 
 
-#endif /* MUSICBOX2_NEW_MAIN_H_ */
+
+class Periphy_t {
+private:
+
+public:
+    void InitSwich(){
+        PinSetupOut(PeriphySW_Pin, PeriphySW_PinMode);
+        PinSet(PeriphySW_Pin);
+        PinSetupOut(PeriphyPWSW_Pin, PeriphySW_PinMode);
+        PinSet(PeriphyPWSW_Pin);
+    }
+    void ON() { PinClear(PeriphySW_Pin); PinClear(PeriphyPWSW_Pin); }
+    void OFF() { PinSet(PeriphySW_Pin); PinSet(PeriphyPWSW_Pin); }
+//    bool _5V_is_here() { return PinIsSet(GPIOA, 9); }//GPIOA, 9, pudPullDown    ExternalPWR_Pin
+};
+extern Periphy_t Periphy;
+
+
+#endif /* MAIN_H_ */

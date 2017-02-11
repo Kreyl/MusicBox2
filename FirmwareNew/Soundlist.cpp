@@ -38,14 +38,15 @@ void SndList_t::PlayRandomFileFromDir(const char* DirName) {
     if(Rslt != FR_OK or Cnt == 0) return;       // Get out if nothing to play
 //    Uart.Printf("\rR=%u; Cnt=%u", Rslt, Cnt);
     // Select number of file
-    uint32_t N = 0;
-    if(Cnt > 1) {   // Get random number if count > 1
+    uint32_t Number = 0;
+    if (Cnt == 2 and PreviousN == 0) Number = 1;
+    else if (Cnt > 2) {   // Get random number if count > 2
         do {
-            N = Random(Cnt-1);      // [0; Cnt-1]
-        } while(N == PreviousN);    // skip same as previous
+            Number = Random(Cnt-1);      // [0; Cnt-1]
+        } while(Number == PreviousN);    // skip same as previous
     }
-//    Uart.Printf("; Random=%u", N);
-    PreviousN = N;
+//    Uart.Printf("; TrackNumber=%u", N);
+    PreviousN = Number;
     // Iterate files in dir until success
     uint32_t Counter = 0;
     Rslt = f_opendir(&Dir, DirName);
@@ -62,7 +63,7 @@ void SndList_t::PlayRandomFileFromDir(const char* DirName) {
                 uint32_t Len = strlen(FName);
                 if(Len > 4) {
                     if((strcasecmp(&FName[Len-3], "mp3") == 0) or (strcasecmp(&FName[Len-3], "wav") == 0)) {
-                        if(N == Counter) {
+                        if(Number == Counter) {
                             // Build full filename with path
                             // Check if root dir. Empty string allowed, too
                             int Len = strlen(DirName);
@@ -81,6 +82,8 @@ void SndList_t::PlayRandomFileFromDir(const char* DirName) {
         } // Filename o
     } // while true
 }
+
+
 
 
 

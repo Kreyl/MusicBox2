@@ -16,7 +16,6 @@
 #include "string.h"     // for memcpy
 #include <cstdlib>      // for strtoul
 
-typedef Thread thread_t;
 
 #if 1 // ============================ General ==================================
 #define PACKED __attribute__ ((__packed__))
@@ -184,11 +183,11 @@ public:
 #define REBOOT()                SCB_AIRCR = (AIRCR_VECTKEY | 0x04)
 
 namespace BackupSpc {
-static inline void EnableBackupAccess() {
+static inline void EnableAccess() {
     rccEnablePWRInterface(FALSE);
     PWR->CR |= PWR_CR_DBP;
 }
-static inline void DisableBackupAccess() {
+static inline void DisableAccess() {
     PWR->CR &= ~PWR_CR_DBP;
     rccDisablePWRInterface(FALSE);
 }
@@ -263,7 +262,7 @@ public:
     }
     void CallbackHandler() {    // Call it inside callback
         chSysLockFromISR();
-        chSysUnlock()
+//        chSysUnlock()
         chEvtSignalI(PThread, EvtMsk);
         if(TmrType == tktPeriodic) StartI();
         chSysUnlockFromISR();
@@ -307,6 +306,10 @@ enum PinSpeed_t {
     ps50MHz = 0b10,
     ps100MHz = 0b11
 };
+#define PIN_SPEED_DEFAULT   ps50MHz
+
+enum Inverted_t {invNotInverted, invInverted};
+
 enum PinAF_t {
     AF0=0, AF1=1, AF2=2, AF3=3, AF4=4, AF5=5, AF6=6, AF7=7,
     AF8=8, AF9=9,AF10=10, AF11=11, AF12=12, AF13=13, AF14=14, AF15=15
@@ -316,7 +319,15 @@ struct PinInputSetup_t {
     uint16_t Pin;
     PinPullUpDown_t PullUpDown;
 };
-
+struct PwmSetup_t {
+    GPIO_TypeDef *PGpio;
+    uint16_t Pin;
+    TIM_TypeDef *PTimer;
+    uint32_t TimerChnl;
+    Inverted_t Inverted;
+    PinOutMode_t OutputType;
+    uint32_t TopValue;
+};
 
 // Set/clear
 static inline void PinSet    (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { PGpioPort->BSRRL = (uint32_t)(1<<APinNumber); }
@@ -412,6 +423,62 @@ static inline void PinFastOutPP(GPIO_TypeDef *PGpioPort, const uint16_t APinNumb
     PGpioPort->MODER |= 0b01 << (APinNumber*2);     // Set 0; // new bits
 }
 
+#if 1 // ==== Port setup ====
+static inline void PortInit(GPIO_TypeDef *PGpioPort,
+        const PinOutMode_t PinOutMode,
+        const PinPullUpDown_t APullUpDown = pudNone,
+        const PinSpeed_t ASpeed = PIN_SPEED_DEFAULT
+        ) {
+    // Clock
+    PinClockEnable(PGpioPort);
+    // Setup output type
+    if(PinOutMode == omPushPull) PGpioPort->OTYPER = 0;
+    else PGpioPort->OTYPER = 0xFFFF;
+    // Setup Pull-Up or Pull-Down
+    if(APullUpDown == pudPullUp) PGpioPort->PUPDR = 0x55555555; // 01 01 01 01...
+    else if(APullUpDown == pudPullDown) PGpioPort->PUPDR = 0xAAAAAAAA; // 10 10 10 10...
+    else PGpioPort->PUPDR = 0x00000000; // no pull
+    // Setup speed
+#if not defined STM32F2XX
+    switch(ASpeed) {
+#if defined STM32L1XX
+        case psVeryLow:  PGpioPort->OSPEEDR = 0x00000000; break;
+        case psLow:      PGpioPort->OSPEEDR = 0x55555555; break;
+        case psMedium:   PGpioPort->OSPEEDR = 0xAAAAAAAA; break;
+        case psHigh:     PGpioPort->OSPEEDR = 0xFFFFFFFF; break;
+#elif defined STM32L4XX
+        case psVeryHigh: PGpioPort->OSPEEDR = 0xFFFFFFFF; break;
+        case psLow:      PGpioPort->OSPEEDR = 0x00000000; break;
+        case psMedium:   PGpioPort->OSPEEDR = 0x55555555; break;
+        case psHigh:     PGpioPort->OSPEEDR = 0xAAAAAAAA; break;
+#elif defined STM32F0XX
+        case psLow:      PGpioPort->OSPEEDR = 0x00000000; break;
+        case psMedium:   PGpioPort->OSPEEDR = 0x55555555; break;
+        case psHigh:     PGpioPort->OSPEEDR = 0xFFFFFFFF; break;
+#endif
+    }
+#endif
+}
+
+__always_inline
+static inline void PortSetupOutput(GPIO_TypeDef *PGpioPort) {
+    PGpioPort->MODER = 0x55555555;
+}
+__always_inline
+static inline void PortSetupInput(GPIO_TypeDef *PGpioPort) {
+    PGpioPort->MODER = 0x00000000;
+}
+
+__always_inline
+static inline void PortSetValue(GPIO_TypeDef *PGpioPort, uint16_t Data) {
+    PGpioPort->ODR = Data;
+}
+__always_inline
+static inline uint16_t PortGetValue(GPIO_TypeDef *PGpioPort) {
+    return PGpioPort->IDR;
+}
+#endif // Simple pin manipulations
+
 #if 1 // ===================== Pin classes ========================
 class PinOutput_t {
 private:
@@ -439,20 +506,6 @@ public:
     void Deinit() const { PinSetupAnalog(ISetup.PGpio, ISetup.Pin); }
     bool IsHi() const { return PinIsSet(ISetup.PGpio, ISetup.Pin); }
     PinInput_t(const PinInputSetup_t &ASetup) : ISetup(ASetup) {}
-};
-#endif
-
-// ==== PWM output ====
-class PwmPin_t {
-private:
-    uint32_t *PClk;
-    TIM_TypeDef* Tim;
-public:
-    __IO uint32_t *PCCR;    // Made public to allow DMA
-    void SetFreqHz(uint32_t FreqHz);
-    void Init(GPIO_TypeDef *GPIO, uint16_t N, TIM_TypeDef* PTim, uint8_t Chnl, uint16_t TopValue, bool Inverted=false);
-    void Set(uint16_t Value) { *PCCR = Value; }
-    void Off() { *PCCR = 0; }
 };
 #endif
 
@@ -528,63 +581,75 @@ uint32_t Random(uint32_t TopValue);
 enum TmrTrigInput_t {tiITR0=0x00, tiITR1=0x10, tiITR2=0x20, tiITR3=0x30, tiTIED=0x40, tiTI1FP1=0x50, tiTI2FP2=0x60, tiETRF=0x70};
 enum TmrMasterMode_t {mmReset=0x00, mmEnable=0x10, mmUpdate=0x20, mmComparePulse=0x30, mmCompare1=0x40, mmCompare2=0x50, mmCompare3=0x60, mmCompare4=0x70};
 enum TmrSlaveMode_t {smDisable=0, smEncoder1=1, smEncoder2=2, smEncoder3=3, smReset=4, smGated=5, smTrigger=6, smExternal=7};
-enum Inverted_t {invNotInverted, invInverted};
 
 #define TMR_PCCR(PTimer, AChannel)  ((uint32_t*)(&PTimer->CCR1 + AChannel-1))
 #define TMR_ENABLE(PTimer)          PTimer->CR1 |=  TIM_CR1_CEN;
 #define TMR_DISABLE(PTimer)         PTimer->CR1 &= ~TIM_CR1_CEN;
+#define TMR_GENERATE_UPD(PTimer)    PTimer->EGR = TIM_EGR_UG;
 
 class Timer_t {
-private:
+protected:
     TIM_TypeDef* ITmr;
-    uint32_t *PClk;
 public:
-    // Common
-    static void InitClock(TIM_TypeDef* Tmr);
-    void Init(TIM_TypeDef* Tmr) {
-        ITmr = Tmr;
-        // Clock src
-        if(ANY_OF_5(ITmr, TIM1, TIM8, TIM9, TIM10, TIM11)) PClk = &Clk.APB2FreqHz;
-        else PClk = &Clk.APB1FreqHz;
-        InitClock(Tmr);
-    }
-    void Deinit();
-    inline void Enable()  { ITmr->CR1 |=  TIM_CR1_CEN; }
-    inline void Disable() { ITmr->CR1 &= ~TIM_CR1_CEN; }
-    inline void SetUpdateFrequency(uint32_t FreqHz) { SetTopValue(*PClk / FreqHz); }
-    inline void SetTopValue(uint32_t Value) { ITmr->ARR = Value; }
-    inline uint32_t GetTopValue() { return ITmr->ARR; }
-    inline void SetupPrescaler(uint32_t PrescaledFreqHz) { ITmr->PSC = (*PClk / PrescaledFreqHz) - 1; }
-    inline void SetCounter(uint32_t Value) { ITmr->CNT = Value; }
-    inline uint32_t GetCounter() { return ITmr->CNT; }
+    Timer_t(TIM_TypeDef *APTimer) : ITmr(APTimer) {}
+    void Init() const;
+    void Deinit() const;
+    void Enable() const { TMR_ENABLE(ITmr); }
+    void Disable() const { TMR_DISABLE(ITmr); }
+    void SetUpdateFrequencyChangingPrescaler(uint32_t FreqHz) const;
+    void SetUpdateFrequencyChangingTopValue(uint32_t FreqHz) const;
+    void SetTopValue(uint32_t Value) const { ITmr->ARR = Value; }
+    uint32_t GetTopValue() const { return ITmr->ARR; }
+    void EnableArrBuffering()  const { ITmr->CR1 |=  TIM_CR1_ARPE; }
+    void DisableArrBuffering() const { ITmr->CR1 &= ~TIM_CR1_ARPE; }
+    void SetCounter(uint32_t Value) const { ITmr->CNT = Value; }
+    uint32_t GetCounter() const { return ITmr->CNT; }
     // Master/Slave
-    inline void SetTriggerInput(TmrTrigInput_t TrgInput) {
+    void SetTriggerInput(TmrTrigInput_t TrgInput) const {
         uint16_t tmp = ITmr->SMCR;
         tmp &= ~TIM_SMCR_TS;   // Clear bits
         tmp |= (uint16_t)TrgInput;
         ITmr->SMCR = tmp;
     }
-    inline void MasterModeSelect(TmrMasterMode_t MasterMode) {
+    void SelectMasterMode(TmrMasterMode_t MasterMode) const {
         uint16_t tmp = ITmr->CR2;
         tmp &= ~TIM_CR2_MMS;
         tmp |= (uint16_t)MasterMode;
         ITmr->CR2 = tmp;
     }
-    inline void SlaveModeSelect(TmrSlaveMode_t SlaveMode) {
+    void SelectSlaveMode(TmrSlaveMode_t SlaveMode) const {
         uint16_t tmp = ITmr->SMCR;
         tmp &= ~TIM_SMCR_SMS;
         tmp |= (uint16_t)SlaveMode;
         ITmr->SMCR = tmp;
     }
     // DMA, Irq, Evt
-    inline void DmaOnTriggerEnable() { ITmr->DIER |= TIM_DIER_TDE; }
-    inline void GenerateUpdateEvt()  { ITmr->EGR = TIM_EGR_UG; }
-    inline void IrqOnTriggerEnable() { ITmr->DIER |= TIM_DIER_UIE; }
-    inline void ClearIrqPendingBit() { ITmr->SR &= ~TIM_SR_UIF;    }
-    // PWM
-    static void InitPwm(TIM_TypeDef* Tmr, GPIO_TypeDef *GPIO, uint16_t N, uint8_t Chnl, uint32_t ATopValue, Inverted_t Inverted = invNotInverted);
+    void EnableDmaOnTrigger() const { ITmr->DIER |= TIM_DIER_TDE; }
+    void EnableDMAOnCapture(uint8_t CaptureReq) const { ITmr->DIER |= (1 << (CaptureReq + 8)); }
+    void GenerateUpdateEvt()  const { ITmr->EGR = TIM_EGR_UG; }
+    void EnableIrqOnUpdate()  const { ITmr->DIER |= TIM_DIER_UIE; }
+    void EnableIrq(uint32_t IrqChnl, uint32_t IrqPriority) const { nvicEnableVector(IrqChnl, IrqPriority); }
+    void ClearIrqPendingBit() const { ITmr->SR &= ~TIM_SR_UIF; }
 };
 #endif
+
+// ==== PWM output ====
+/* Example:
+ * #define LED_R_PIN { GPIOB, 1, TIM3, 4, invInverted, omPushPull, 255 }
+ * PinOutputPWM_t Led {LedPin};
+*/
+class PinOutputPWM_t : private Timer_t {
+private:
+    const PwmSetup_t ISetup;
+public:
+    void Set(const uint16_t AValue) const { *TMR_PCCR(ITmr, ISetup.TimerChnl) = AValue; }    // CCR[N] = AValue
+    void Init() const;
+    void Deinit() const { Timer_t::Deinit(); PinSetupAnalog(ISetup.PGpio, ISetup.Pin); }
+    void SetFrequencyHz(uint32_t FreqHz) const { Timer_t::SetUpdateFrequencyChangingPrescaler(FreqHz); }
+    PinOutputPWM_t(const PwmSetup_t &ASetup) : Timer_t(ASetup.PTimer), ISetup(ASetup) {}
+};
+#endif
+
 
 #if 0 // =============================== IWDG ==================================
 enum IwdgPre_t {

@@ -85,6 +85,7 @@ union VsCmd_t {
 };
 
 #define VS_VOLUME_STEP          4
+#define VS_VOLUME_STEP_BIG      10
 #define VS_INITIAL_ATTENUATION  0x33
 #define VS_CMD_BUF_SZ           4       // Number of cmds in buf
 #define VS_DATA_BUF_SZ          4096    // bytes. Must be multiply of 512.
@@ -176,6 +177,16 @@ public:
     }
     void VolumeDecrease() {
         IAttenuation += VS_VOLUME_STEP;
+        if(IAttenuation > 0x8F) IAttenuation = 0x8F;
+        AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
+    }
+    void VolumeIncreaseBig() {
+        IAttenuation -= VS_VOLUME_STEP_BIG;
+        if(IAttenuation < 0) IAttenuation = 0;
+        AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
+    }
+    void VolumeDecreaseBig() {
+        IAttenuation += VS_VOLUME_STEP_BIG;
         if(IAttenuation > 0x8F) IAttenuation = 0x8F;
         AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
     }

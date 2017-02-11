@@ -24,10 +24,10 @@
 #ifndef SIMPLESENSORS_ENABLED
 #define SIMPLESENSORS_ENABLED   FALSE
 #endif
-#define SNS_POLL_PERIOD_MS      72
+#define SNS_POLL_PERIOD_MS      100
 
 #if SIMPLESENSORS_ENABLED
-enum PinSnsState_t {pssLo, pssHi, pssRising, pssFalling};
+enum PinSnsState_t {pssNone, pssLo, pssHi, pssRising, pssFalling};
 typedef void (*ftVoidPSnsStLen)(PinSnsState_t *PState, uint32_t Len);
 
 // Single pin setup data
@@ -40,10 +40,18 @@ public:
 // ================================= Settings ==================================
 // Button handler
 extern void ProcessButtons(PinSnsState_t *PState, uint32_t Len);
+extern void Process5VSns(PinSnsState_t *PState, uint32_t Len);
+extern void Process3VSns1(PinSnsState_t *PState, uint32_t Len);
+extern void Process3VSns2(PinSnsState_t *PState, uint32_t Len);
 
 const PinSns_t PinSns[] = {
-        // Buttons
-        {BTN_PIN, ProcessButtons},
+        // Button
+        {BTN_VolUp_pin, ProcessButtons},
+        {BTN_VolDown_pin, ProcessButtons},
+        // 5V sns
+        {ExternalPWR_Pin, Process5VSns},
+        {Sensor1_Pin, Process3VSns1},
+        {Sensor2_Pin, Process3VSns2},
 };
 #define PIN_SNS_CNT     countof(PinSns)
 

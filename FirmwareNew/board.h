@@ -21,10 +21,19 @@
 
 //#define SYS_TIM_CLK     (Clk.APBFreqHz) // OS timer settings
 #define I2C_REQUIRED    FALSE
-#define ADC_REQUIRED    FALSE
+#define ADC_REQUIRED    TRUE
+#define SIMPLESENSORS_ENABLED   TRUE
+
+// Backup Registers
+#define TrackNumberBKP    0
+#define VolumeBKP         1
+
+// Default Settings
+#define DEF_MotorSpeed    -16  // [об/мин * 0,1]
+#define DEF_VolLevel      200
 
 #if 1 // ========================== GPIO =======================================
-// PortMinTim_t: GPIO, Pin, Tim, TimChnl, invInverted, omPushPull, TopValue
+
 // UART
 #define UART_GPIO       GPIOA
 #define UART_TX_PIN     2
@@ -32,24 +41,44 @@
 #define UART_AF         AF7 // for USART2 @ GPIOA
 
 // LED
-#define LED_PIN         { GPIOB, 2, TIM2, 2, invNotInverted, omPushPull, 255 }
+#define LED_PIN         { GPIOB, 3, TIM2, 2, invNotInverted, omPushPull, 512 }
 
 // Button
-#define BTN_VolUp       { GPIOA, 6, pudPullUp }
-#define BTN_VolDown     { GPIOA, 7, pudPullUp }
-#define WKUP_pin        { GPIOA, 0, pudPullUp }
+#define BUTTONS_CNT     2
+#define VolUpIndex      0
+#define VolDownIndex    1
+#define BTN_VolUp_pin   { GPIOA, 6, pudPullUp }
+#define BTN_VolDown_pin { GPIOA, 7, pudPullUp }
+
+// Battery Management
+#define BattMeasSW_Pin  { GPIOC, 1, omOpenDrain }
+#define BattMeas_Pin    GPIOC, 0
 
 // Vibro
 
 // Beeper
 
+// Stepping Motor
+#define MotorPins       { GPIOB, 6, 7, 8, 9} //6, 7, 8, 9
+#define MotorSHDN       4
+#define MotorAngle      18
+#define MotorRatio      100
+// Max. Starting Frequency    900 PPS
+// Max. Slewing Frequency     1200 PPS
+// Pulse Per Second, т.е импульсов (шагов) за секунду (целых шагов или микрошагов)
+
+// Sensors
+#define Sensor1_Pin     { GPIOB, 0, pudPullDown }
+#define Sensor2_Pin     { GPIOB, 1, pudPullDown }
+#define WKUP_pin        { GPIOA, 0, pudPullDown }
+
 // Switches
-#define BattMeter_Pin       GPIOC, 1
-#define BattMeter_PinMode   omOpenDrain
-#define Periphy_Pin         GPIOC, 14
-#define Periphy_PinMode     omOpenDrain
-#define PeriphyPW_Pin       GPIOC, 15
-#define PeriphyPW_PinMode   omOpenDrain
+#define PeriphySW_Pin         GPIOC, 14
+#define PeriphyPWSW_Pin       GPIOC, 15
+#define PeriphySW_PinMode     omOpenDrain
+
+// External Power Input
+#define ExternalPWR_Pin    { GPIOA, 9, pudPullDown }
 
 #endif // GPIO
 
@@ -72,16 +101,17 @@
 
 #if ADC_REQUIRED // ======================= Inner ADC ==========================
 // Clock divider: clock is generated from the APB2
-#define ADC_CLK_DIVIDER		adcDiv2
+#define ADC_CLK_DIVIDER		adcDiv4
 
 // ADC channels
-#define BAT_CHNL 	        1
+#define BAT_CHNL 	        10
 
-#define ADC_VREFINT_CHNL    17  // All 4xx and F072 devices. Do not change.
-#define ADC_CHANNELS        { BAT_CHNL, ADC_VREFINT_CHNL }
-#define ADC_CHANNEL_CNT     2   // Do not use countof(AdcChannels) as preprocessor does not know what is countof => cannot check
-#define ADC_SAMPLE_TIME     ast55d5Cycles
-#define ADC_SAMPLE_CNT      8   // How many times to measure every channel
+//#define ADC_VREFINT_CHNL    17  // All 4xx and F072 devices. Do not change.
+#define ADC_CHANNELS        { BAT_CHNL }//{ BAT_CHNL, ADC_VREFINT_CHNL }
+#define CallConst           450
+#define ADC_CHANNEL_CNT     1   // Do not use countof(AdcChannels) as preprocessor does not know what is countof => cannot check
+#define ADC_SAMPLE_TIME     ast239d5Cycles
+#define ADC_SAMPLE_CNT      16   // How many times to measure every channel
 
 #define ADC_MAX_SEQ_LEN     16  // 1...16; Const, see ref man
 #define ADC_SEQ_LEN         (ADC_SAMPLE_CNT * ADC_CHANNEL_CNT)
@@ -106,7 +136,7 @@
 /* DMA request mapped on this DMA channel only if the corresponding remapping bit is cleared in the SYSCFG_CFGR1
  * register. For more details, please refer to Section10.1.1: SYSCFG configuration register 1 (SYSCFG_CFGR1) on
  * page173 */
-#define ADC_DMA         STM32_DMA1_STREAM1
+#define ADC_DMA         STM32_DMA2_STREAM4
 #define ADC_DMA_MODE    STM32_DMA_CR_CHSEL(0) |   /* DMA2 Stream4 Channel0 */ \
                         DMA_PRIORITY_LOW | \
                         STM32_DMA_CR_MSIZE_HWORD | \
