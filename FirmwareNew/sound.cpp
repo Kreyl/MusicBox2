@@ -20,6 +20,7 @@ extern "C" {
 CH_IRQ_HANDLER(VS_IRQ_HANDLER) {
     CH_IRQ_PROLOGUE();
     chSysLockFromISR();
+    Uart.PrintfI("Irq\r");
     IDreq.CleanIrqFlag();
     IDreq.DisableIrq();
     chEvtSignalI(Sound.PThread, VS_EVT_DREQ_IRQ);
@@ -35,14 +36,14 @@ void SIrqDmaHandler(void *p, uint32_t flags) {
 } // extern c
 
 // =========================== Implementation ==================================
-static WORKING_AREA(waSoundThread, 512);
-__attribute__((noreturn))
+static THD_WORKING_AREA(waSoundThread, 512);
+__noreturn
 static void SoundThread(void *arg) {
     chRegSetThreadName("Sound");
     Sound.ITask();
 }
 
-__attribute__((noreturn))
+__noreturn
 void Sound_t::ITask() {
     while(true) {
         eventmask_t EvtMsk = chEvtWaitAny(ALL_EVENTS);
@@ -59,6 +60,7 @@ void Sound_t::ITask() {
 #endif
 
         if(EvtMsk & VS_EVT_DREQ_IRQ) {
+            Uart.Printf("VS_EVT_DREQ_IRQ\r");
             chThdSleepMilliseconds(1);  // Make a pause after IRQ rise
             ISendNextData();
         }
@@ -126,7 +128,7 @@ void Sound_t::Init() {
     IDmaIdle = true;
     PBuf = &Buf1;
     IAttenuation = VS_INITIAL_ATTENUATION;
-    chMBInit(&CmdBox, CmdBuf, VS_CMD_BUF_SZ);
+    chMBObjectInit(&CmdBox, CmdBuf, VS_CMD_BUF_SZ);
 
     // ==== Init VS ====
     Rst_Hi();
@@ -134,7 +136,6 @@ void Sound_t::Init() {
     Clk.MCO1Enable(mco1HSE, mcoDiv1);   // Only after reset, as pins are grounded when Rst is Lo
     chThdSleepMilliseconds(7);
     // ==== DREQ IRQ ====
-//    IDreq.Setup(VS_GPIO, VS_DREQ, ttRising);
     IDreq.Init(ttRising);
     // ==== Thread ====
     PThread = chThdCreateStatic(waSoundThread, sizeof(waSoundThread), NORMALPRIO, (tfunc_t)SoundThread, NULL);
@@ -193,18 +194,18 @@ void Sound_t::IPlayNew() {
 
 // ================================ Inner use ==================================
 void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
+    UartPrintfFunc();
     VsCmd_t FCmd;
     chSysLock();
     FCmd.OpCode = VS_WRITE_OPCODE;
     FCmd.Address = AAddr;
     FCmd.Data = __REV16(AData);
     // Add cmd to queue
-//    chMBPost(&CmdBox, FCmd.Msg, TIME_INFINITE);
     chMBPostI(&CmdBox, FCmd.Msg);
 
     // StartTransmissionIfNotBusy:
     if(IDmaIdle and IDreq.IsHi()) {
-//            Uart.PrintfI("\rTXinB");
+        Uart.PrintfI("\rTXinB");
         IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
         IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
     }
@@ -218,7 +219,7 @@ void Sound_t::ISendNextData() {
     IDmaIdle = false;
     // ==== If command queue is not empty, send command ====
     msg_t msg = chMBFetch(&CmdBox, &ICmd.Msg, TIME_IMMEDIATE);
-    if(msg == RDY_OK) {
+    if(msg == MSG_OK) {
 //        Uart.PrintfI("\rvCmd: %A", &ICmd, 4, ' ');
         XCS_Lo();   // Start Cmd transmission
         dmaStreamSetMemory0(VS_DMA, &ICmd);

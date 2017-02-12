@@ -119,7 +119,7 @@ extern  Spi_t ISpi;
 class Sound_t {
 private:
     msg_t CmdBuf[VS_CMD_BUF_SZ];
-    Mailbox CmdBox;
+    mailbox_t CmdBox;
     VsCmd_t ICmd;
     VsBuf_t Buf1, Buf2, *PBuf;
     uint32_t ZeroesCount;
@@ -176,14 +176,16 @@ public:
         return 0xFE - IAttenuation;
     }
     void VolumeIncrease() {
+        Uart.Printf(" %S\r", __FUNCTION__);
         IAttenuation -= VS_VOLUME_STEP;
         if(IAttenuation < 0) IAttenuation = 0;
         AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
     }
     void VolumeDecrease() {
-        IAttenuation += VS_VOLUME_STEP;
-        if(IAttenuation > 0x8F) IAttenuation = 0x8F;
-        AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
+        UartPrintfFunc();
+//        IAttenuation += VS_VOLUME_STEP;
+//        if(IAttenuation > 0x8F) IAttenuation = 0x8F;
+//        AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
     }    void VolumeIncreaseBig() {
         IAttenuation -= VS_VOLUME_STEP_BIG;
         if(IAttenuation < 0) IAttenuation = 0;
@@ -194,7 +196,7 @@ public:
         if(IAttenuation > 0x8F) IAttenuation = 0x8F;
         AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
     }
-    void RegisterAppThd(Thread *PThd) { IPAppThd = PThd; }
+    void RegisterAppThd(thread_t *PThd) { IPAppThd = PThd; }
 
     uint32_t GetPosition() { return IFile.fptr; }
 #if VS_AMPF_EXISTS

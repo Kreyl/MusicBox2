@@ -42,7 +42,7 @@ void SndList_t::PlayRandomFileFromDir(const char* DirName) {
     if (Cnt == 2 and PreviousN == 0) Number = 1;
     else if (Cnt > 2) {   // Get random number if count > 2
         do {
-            Number = Random(Cnt-1);      // [0; Cnt-1]
+            Number = Random(0, Cnt-1);      // [0; Cnt-1]
         } while(Number == PreviousN);    // skip same as previous
     }
 //    Uart.Printf("; TrackNumber=%u", N);

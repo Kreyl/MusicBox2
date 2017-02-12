@@ -40,29 +40,29 @@ extern RTCDriver RTCD1;
 
 
 // ====================== KL's semaphored read/write ===========================
-Semaphore semSDRW;
+binary_semaphore_t semSDRW;
 
 bool SDRead(uint32_t startblk, uint8_t *buffer, uint32_t n) {
 //    PrintfC("\r*%S ", chThdSelf()->p_name);
-    msg_t msg = chSemWaitTimeout(&semSDRW, MS2ST(3600));
-    if(msg == RDY_OK) {
+    msg_t msg = chBSemWaitTimeout(&semSDRW, MS2ST(3600));
+    if(msg == MSG_OK) {
 //        PrintfC(" +%S ", chThdSelf()->p_name);
         bool rslt = sdcRead(&SDCD1, startblk, buffer, n);
-        chSemSignal(&semSDRW);
+        chBSemSignal(&semSDRW);
 //        PrintfC(" =%S ", chThdSelf()->p_name);
         return rslt;
     }
     else {
-        PrintfC("\rSD sem=%d Thd=%S", msg, chThdSelf()->p_name);
+        PrintfC("\rSD sem=%d Thd=%S", msg, chThdGetSelfX()->p_name);
         return false;
     }
 }
 
 bool SDWrite(uint32_t startblk, const uint8_t *buffer, uint32_t n) {
-    msg_t msg = chSemWaitTimeout(&semSDRW, MS2ST(3600));
-    if(msg == RDY_OK) {
+    msg_t msg = chBSemWaitTimeout(&semSDRW, MS2ST(3600));
+    if(msg == MSG_OK) {
         bool rslt = sdcWrite(&SDCD1, startblk, buffer, n);
-        chSemSignal(&semSDRW);
+        chBSemSignal(&semSDRW);
         return rslt;
     }
     else return false;
@@ -76,6 +76,7 @@ DSTATUS disk_initialize (
 )
 {
   DSTATUS stat;
+  chBSemObjectInit(&semSDRW, false);    // Not taken
 
   switch (drv) {
 #if HAL_USE_MMC_SPI
@@ -281,7 +282,9 @@ bit10:5   Minute (0..59)
 bit4:0    Second / 2 (0..29)
 */
 DWORD get_fattime(void) {
-#if HAL_USE_RTC
+    return ((uint32_t)0 | (1 << 16)) | (1 << 21); /* wrong but valid time */
+/*
+    #if HAL_USE_RTC
     return rtcGetTimeFat(&RTCD1);
 #else
 #define FAT_YEAR    2015
@@ -295,6 +298,6 @@ DWORD get_fattime(void) {
     uint32_t month = FAT_MONTH;
     uint32_t day   = FAT_DAY;
     return ((year - 1980) << 25)|(month << 21)|(day << 16)|(hour << 11)|(min << 5)|(sec >> 1);
-    //return ((uint32_t)0 | (1 << 16)) | (1 << 21); /* wrong but valid time */
 #endif
+    */
 }

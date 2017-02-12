@@ -21,10 +21,10 @@ enum EpPktState_t {psNoPkt, psDataPkt, psZeroPkt};
 class Ep_t {
 private:
     uint8_t Indx;
-    InputQueue *POutQueue;
+    input_queue_t *POutQueue;
     EpState_t State;
     EpPktState_t PktState;
-    Thread *PThread;
+    thread_t *PThread;
     bool Buzy;
     uint8_t *PtrIn, *PtrOut;
     uint32_t LengthIn, LengthOut;
@@ -63,7 +63,7 @@ public:
     // OUT
     uint32_t GetRcvResidueLen() { return LengthOut; }
     void StartReceiveToBuf(uint8_t *PDst, uint32_t Len);
-    void AssignOutQueue(InputQueue *PQueue) { POutQueue = PQueue; }
+    void AssignOutQueue(input_queue_t *PQueue) { POutQueue = PQueue; }
     // IN
     void StartTransmitBuf(uint8_t *PSrc, uint32_t ALen);
     // Common
@@ -126,7 +126,7 @@ private:
     void IEndpointsInit();
 public:
     bool IsReady;
-    Thread *PThread;
+    thread_t *PThread;
     void Init();
     void Connect()    { OTG_FS->GCCFG |=  GCCFG_VBUSBSEN | GCCFG_NOVBUSSENS; }
     void Disconnect() { OTG_FS->GCCFG &= ~GCCFG_VBUSBSEN; }

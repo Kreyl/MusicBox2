@@ -86,7 +86,7 @@ class MassStorage_t {
         };
     };
     bool ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen);
-    Thread *PThread;
+    thread_t *PThread;
 public:
     void Init();
     void Reset();

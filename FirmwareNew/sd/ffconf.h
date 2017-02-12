@@ -156,7 +156,7 @@
 / System Configurations
 /----------------------------------------------------------------------------*/
 
-#define _WORD_ACCESS	1	/* 0 or 1 */
+#define _WORD_ACCESS	0	/* 0 or 1 */
 /* Set 0 first and it is always compatible with all platforms. The _WORD_ACCESS
 /  option defines which access method is used to the word data on the FAT volume.
 /
@@ -174,8 +174,8 @@
 /  windows.h, ucos_ii.h and semphr.h, must be included prior to ff.h. */
 
 #define _FS_REENTRANT	1		/* 0:Disable or 1:Enable */
-#define _FS_TIMEOUT		1000	/* Timeout period in unit of time ticks */
-#define	_SYNC_t			Semaphore * /* O/S dependent type of sync object. e.g. HANDLE, OS_EVENT*, ID and etc.. */
+#define _FS_TIMEOUT		MS2ST(1000)	/* Timeout period in unit of time ticks */
+#define	_SYNC_t			semaphore_t* /* O/S dependent type of sync object. e.g. HANDLE, OS_EVENT*, ID and etc.. */
 
 /* The _FS_REENTRANT option switches the reentrancy (thread safe) of the FatFs module.
 /

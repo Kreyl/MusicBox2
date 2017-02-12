@@ -14,12 +14,12 @@
 #define APP_NAME            "MusicBox"
 
 // MCU type as defined in the ST header.
-#define STM32F205
+#define STM32F205xx
 
 // Freq of external crystal if any. Leave it here even if not used.
 #define CRYSTAL_FREQ_HZ 12000000
 
-//#define SYS_TIM_CLK     (Clk.APBFreqHz) // OS timer settings
+#define SYS_TIM_CLK     (Clk.APB1FreqHz) // OS timer settings
 #define I2C_REQUIRED    FALSE
 #define ADC_REQUIRED    TRUE
 #define SIMPLESENSORS_ENABLED   TRUE
@@ -47,8 +47,8 @@
 #define BUTTONS_CNT     2
 #define VolUpIndex      0
 #define VolDownIndex    1
-#define BTN_VolUp_pin   { GPIOA, 6, pudPullUp }
-#define BTN_VolDown_pin { GPIOA, 7, pudPullUp }
+#define BTN_VolUp_pin   GPIOA, 6, pudPullUp
+#define BTN_VolDown_pin GPIOA, 7, pudPullUp
 
 // Battery Management
 #define BattMeasSW_Pin  { GPIOC, 1, omOpenDrain }
@@ -68,8 +68,8 @@
 // Pulse Per Second, т.е импульсов (шагов) за секунду (целых шагов или микрошагов)
 
 // Sensors
-#define Sensor1_Pin     { GPIOB, 0, pudPullDown }
-#define Sensor2_Pin     { GPIOB, 1, pudPullDown }
+#define Sensor1_Pin     GPIOB, 0, pudPullDown
+#define Sensor2_Pin     GPIOB, 1, pudPullDown
 #define WKUP_pin        { GPIOA, 0, pudPullDown }
 
 // Switches
@@ -78,7 +78,7 @@
 #define PeriphySW_PinMode     omOpenDrain
 
 // External Power Input
-#define ExternalPWR_Pin    { GPIOA, 9, pudPullDown }
+#define ExternalPWR_Pin    GPIOA, 9, pudPullDown
 
 #endif // GPIO
 
@@ -126,7 +126,7 @@
 // Remap is made automatically if required
 #define UART_DMA_TX     STM32_DMA1_STREAM6
 #define UART_DMA_RX     STM32_DMA1_STREAM5
-#define UART_DMA_CHNL   4   // Dummy
+#define UART_DMA_CHNL   4
 
 #if I2C_REQUIRED // ==== I2C ====
 

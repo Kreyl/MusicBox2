@@ -51,7 +51,7 @@ void Usb_t::Init() {
     rccResetOTG_FS();
 
     // Enable IRQ
-    nvicEnableVector(STM32_OTG1_NUMBER, CORTEX_PRIORITY_MASK(IRQ_PRIO_LOW));
+    nvicEnableVector(STM32_OTG1_NUMBER, IRQ_PRIO_LOW);
 
     // ==== OTG init ====
     // Forced device mode, USB turn-around time = TRDT_VALUE, Full Speed 1.1 PHY, 0 tuning
@@ -536,7 +536,7 @@ void Ep_t::ResumeWaitingThd(uint8_t ReadyMsg) {
     Buzy = false;
     if(PThread != nullptr) {
         chSysLockFromISR();
-        if(PThread->p_state == THD_STATE_SUSPENDED) {
+        if(PThread->p_state == CH_STATE_SUSPENDED) {
             PThread->p_u.rdymsg = ReadyMsg;
             chSchReadyI(PThread);
         }
@@ -549,10 +549,10 @@ uint8_t Ep_t::WaitUntilReady() {
     if(!Buzy) return OK;
     chSysLock();
     uint8_t rslt = OK;
-    PThread = chThdSelf();
-    chSchGoSleepS(THD_STATE_SUSPENDED);
+    PThread = chThdGetSelfX();
+    chSchGoSleepS(CH_STATE_SUSPENDED);
     PThread = nullptr;
-    if(chThdSelf()->p_u.rdymsg != RDY_OK) rslt = FAILURE;
+    if(chThdGetSelfX()->p_u.rdymsg != MSG_OK) rslt = FAILURE;
     chSysUnlock();
     return rslt;
 }

@@ -30,7 +30,7 @@
 /*------------------------------------------------------------------------*/
 /* Static array of Synchronization Objects                                */
 /*------------------------------------------------------------------------*/
-static Semaphore ff_sem[_VOLUMES];
+static semaphore_t ff_sem[_VOLUMES];
 
 /*------------------------------------------------------------------------*/
 /* Create a Synchronization Object                                        */
@@ -38,7 +38,7 @@ static Semaphore ff_sem[_VOLUMES];
 int ff_cre_syncobj(BYTE vol, _SYNC_t *sobj) {
 
   *sobj = &ff_sem[vol];
-  chSemInit(*sobj, 1);
+  chSemObjectInit(*sobj, 1);
   return TRUE;
 }
 
@@ -57,7 +57,7 @@ int ff_del_syncobj(_SYNC_t sobj) {
 int ff_req_grant(_SYNC_t sobj) {
 
   msg_t msg = chSemWaitTimeout(sobj, (systime_t)_FS_TIMEOUT);
-  return msg == RDY_OK;
+  return msg == MSG_OK;
 }
 
 /*------------------------------------------------------------------------*/
@@ -75,14 +75,14 @@ void ff_rel_grant(_SYNC_t sobj) {
 /*------------------------------------------------------------------------*/
 void *ff_memalloc(UINT size) {
 
-  return chHeapAlloc(NULL, size);
+//  return chHeapAlloc(NULL, size);
+    return NULL;
 }
 
 /*------------------------------------------------------------------------*/
 /* Free a memory block                                                    */
 /*------------------------------------------------------------------------*/
 void ff_memfree(void *mblock) {
-
-  chHeapFree(mblock);
+//  chHeapFree(mblock);
 }
 #endif /* _USE_LFN == 3 */

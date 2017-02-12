@@ -18,8 +18,6 @@
 //#include "WS2812BforTMR.h"
 
 App_t App;
-TmrKL_t TmrVolUpBig {MS2ST(1000), EVT_TMR_BigVolUp, tktPeriodic};
-TmrKL_t TmrVolDownBig {MS2ST(1000), EVT_TMR_BigVolDown, tktPeriodic};
 SndList_t SndList;
 Periphy_t Periphy;
 //PinInput_t WKUPpin(WKUP_pin);
@@ -57,22 +55,17 @@ int main() {
     if(ClkResult) Uart.Printf("Clock failure\r");
 
     // USB related
-    MassStorage.Init();
+//    MassStorage.Init();
 
     // Battery: ADC
-    PinSetupAnalog(BattMeas_Pin);
-    BattMeasureSW.Init();
-    BattMeasureSW.SetHi();
-    Adc.Init();
-    Adc.EnableVref();
-
-    // Virtual timers
-    TmrVolUpBig.Init();
-    TmrVolDownBig.Init();
+//    PinSetupAnalog(BattMeas_Pin);
+//    BattMeasureSW.Init();
+//    BattMeasureSW.SetHi();
+//    Adc.Init();
+//    Adc.EnableVref();
 
     // Setup inputs
-    PinSensors.Init();
-//    WKUPpin.Init();
+    SimpleSensors::Init();
     // Setup outputs
     Periphy.InitSwich();
 
@@ -89,35 +82,35 @@ void App_t::PowerON() {
     // Sound
     Sound.AmpfOn();
     Sound.Init();
-    Sound.RegisterAppThd(chThdGetSelfX());
+//    Sound.RegisterAppThd(chThdGetSelfX());
     // Stepping Motor
-    Motor.Init(pdNoDelay);
-    Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
+//    Motor.Init(pdNoDelay);
+//    Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
     // LED
-    Backlight.Init();
+//    Backlight.Init();
 //    Backlight.SetBrightness(0);
-    Backlight.SetPwmFrequencyHz(1000);
+//    Backlight.SetPwmFrequencyHz(1000);
 
-    if(Sleep::WasInStandby()) {
-        Uart.Printf("\rWasStandby"); // WakeUp
-        Sleep::DisableWakeup1Pin();
-        Sleep::ClearStandbyFlag();
-        SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
-        Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
-//        Uart.Printf("\r Load TrackNumber: %u", BackupSpc::ReadBackupRegister(TrackNumberBKP));
-        BackupSpc::DisableAccess();
-    }
-    else {
-        Uart.Printf("\rPowerON");
-        Sound.SetVolume(DEF_VolLevel);
-    }
-    if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
-        SndList.PlayRandomFileFromDir("0:\\");
-        Motor.Start();
-        Backlight.StartOrContinue(lsqFadeIn);
-    }
-    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
-    else ShutDown();
+//    if(Sleep::WasInStandby()) {
+//        Uart.Printf("\rWasStandby"); // WakeUp
+//        Sleep::DisableWakeupPin();
+//        Sleep::ClearStandbyFlag();
+////        SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
+//        //Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
+////        Uart.Printf("\r Load TrackNumber: %u", BackupSpc::ReadBackupRegister(TrackNumberBKP));
+//        BackupSpc::DisableAccess();
+//    }
+//    else {
+//        Uart.Printf("\rPowerON");
+//        Sound.SetVolume(DEF_VolLevel);
+//    }
+//    if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
+//        SndList.PlayRandomFileFromDir("0:\\");
+//        Motor.Start();
+//        Backlight.StartOrContinue(lsqFadeIn);
+//    }
+//    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
+//    else ShutDown();
 }
 
 
@@ -146,42 +139,26 @@ while(true) {
     }
 
     if(EvtMsk & EVT_BUTTONS) {
+//        Uart.Printf("BtnsEvt\r");
         BtnEvtInfo_t EInfo;
         while(BtnGetEvt(&EInfo) == OK) {
-            if(EInfo.Type == bePress) {
-                switch(EInfo.BtnID[0]) {
-                    case VolUpIndex:
-                        Sound.VolumeIncrease();
-//                        Uart.Printf("\r BTN 1 up");
-                        break;
-                    case VolDownIndex:
-                        Sound.VolumeDecrease();
-//                        Uart.Printf("\r BTN 2 dovn");
-                        break;
+            if(EInfo.Type == beShortPress) {
+                Uart.Printf("Btn %u press\r", EInfo.BtnID);
+                switch(EInfo.BtnID) {
+                    case VolUpIndex: Sound.VolumeIncrease(); break;
+                    case VolDownIndex: Sound.VolumeDecrease(); break;
                 }
             }
-            else if(EInfo.Type == beLongPress) {
-                switch(EInfo.BtnID[0]) {
-                    case VolUpIndex:
-                        TmrVolUpBig.Start();
-                        break;
-                    case VolDownIndex:
-                        TmrVolDownBig.Start();
-                        break;
+            else if(EInfo.Type == beRepeat) {
+                Uart.Printf("Btn %u repeat\r", EInfo.BtnID);
+                switch(EInfo.BtnID) {
+                    case VolUpIndex:   Sound.VolumeIncreaseBig(); break;
+                    case VolDownIndex: Sound.VolumeDecreaseBig(); break;
                 }
-            }
-            else if(EInfo.Type == beRelease) {
-                TmrVolUpBig.Stop();
-                TmrVolDownBig.Stop();
             }
         }
     }
-    if(EvtMsk & EVT_TMR_BigVolUp) {
-        Sound.VolumeIncreaseBig();
-    }
-    if(EvtMsk & EVT_TMR_BigVolDown) {
-        Sound.VolumeDecreaseBig();
-    }
+
     if(EvtMsk & EVT_BOX1_CLOSED) {
         if (!Box2Opened.IsHi() and !ExternalPWR.IsHi()){
             ShutDown();
@@ -194,9 +171,9 @@ while(true) {
     }
 
     if(EvtMsk & EVT_ADC_DONE) {
-        uint16_t BatAdc = 2 * (Adc.GetResult(BAT_CHNL) - CallConst); // to count R divider
-        uint8_t NewBatPercent = mV2PercentLiIon(BatAdc);
-        Uart.Printf("mV=%u; percent=%u\r", BatAdc, NewBatPercent);
+//        uint16_t BatAdc = 2 * (Adc.GetResult(BAT_CHNL) - CallConst); // to count R divider
+//        uint8_t NewBatPercent = mV2PercentLiIon(BatAdc);
+//        Uart.Printf("mV=%u; percent=%u\r", BatAdc, NewBatPercent);
 //        Adc.DisableVref();
     }
 
@@ -207,7 +184,7 @@ while(true) {
         Backlight.SetBrightness(0);
         chSysLock();
         Clk.SetFreq48Mhz();
-        Clk.InitSysTick();
+//        Clk.InitSysTick();
         chSysUnlock();
         Usb.Init();
         chThdSleepMilliseconds(540);
@@ -219,7 +196,7 @@ while(true) {
         MassStorage.Reset();
         chSysLock();
         Clk.SetFreq12Mhz();
-        Clk.InitSysTick();
+//        Clk.InitSysTick();
         chSysUnlock();
         Uart.Printf("\rUsb Off");
         if (!Box1Opened.IsHi() and !Box2Opened.IsHi())
@@ -281,9 +258,9 @@ void App_t::OnCmd(Shell_t *PShell) {
 
     else if(PCmd->NameIs("RUN_ADC")) {
 //        Adc.EnableVref();
-        BattMeasureSW.SetLo(); // Connect R divider to GND
-        chThdSleepMicroseconds(100);
-        Adc.StartMeasurement();
+//        BattMeasureSW.SetLo(); // Connect R divider to GND
+//        chThdSleepMicroseconds(100);
+//        Adc.StartMeasurement();
     }
 
     else PShell->Ack(CMD_UNKNOWN);
@@ -291,6 +268,8 @@ void App_t::OnCmd(Shell_t *PShell) {
 
 
 void App_t::ShutDown() {
+    Uart.Printf("\rDbgShutDown");
+    return;
 //    Sound.Shutdown();
     Sound.Stop();
     Motor.Stop();
@@ -306,7 +285,7 @@ void App_t::ShutDown() {
         BackupSpc::EnableAccess();
         BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber());
         BackupSpc::WriteBackupRegister(VolumeBKP, Sound.GetVolume());
-        Sleep::EnableWakeup1Pin();
+        Sleep::EnableWakeupPin();
         Sleep::EnterStandby();
         chSysUnlock();
     }
@@ -315,26 +294,17 @@ void App_t::ShutDown() {
 //        SndList.PlayRandomFileFromDir("0:\\");
 }
 
-
-//void App_t::EnterState(AppState_t NewState) {
-//    switch(NewState) {
-//        case asDefault:
-//
-//            break;
-//        default: break;
-//    }
-//    SystemState = NewState;
-//}
-
-
 // Snsors
 void Process5VSns(PinSnsState_t *PState, uint32_t Len) {
+//    Uart.Printf("  %S\r", __FUNCTION__);
     if(PState[0] == pssRising) App.SignalEvt(EVT_USB_CONNECTED);
     else if(PState[0] == pssFalling) App.SignalEvt(EVT_USB_DISCONNECTED);
 }
 void Process3VSns1(PinSnsState_t *PState, uint32_t Len) {
+//    Uart.Printf("  %S\r", __FUNCTION__);
     if(PState[0] == pssFalling) App.SignalEvt(EVT_BOX1_CLOSED);
 }
 void Process3VSns2(PinSnsState_t *PState, uint32_t Len) {
+//    Uart.Printf("  %S\r", __FUNCTION__);
     if(PState[0] == pssFalling) App.SignalEvt(EVT_BOX2_CLOSED);
 }

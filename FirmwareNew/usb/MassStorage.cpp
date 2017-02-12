@@ -48,7 +48,7 @@ EpState_t Usb_t::NonStandardControlRequestHandler(uint8_t **PPtr, uint32_t *PLen
 }
 
 // Threads
-static WORKING_AREA(waUsbOutThd, 10000);
+static THD_WORKING_AREA(waUsbOutThd, 10000);
 static void UsbOutThd(void *arg) {
     chRegSetThreadName("UsbOut");
     MassStorage.UsbOutTask();
@@ -65,7 +65,7 @@ void MassStorage_t::Init() {
 void MassStorage_t::Reset() {
     // Wake thread if sleeping
     chSysLock();
-    if(PThread->p_state == THD_STATE_SUSPENDED) chSchReadyI(PThread);
+    if(PThread->p_state == CH_STATE_SUSPENDED) chSchReadyI(PThread);
     chSysUnlock();
 }
 
@@ -242,7 +242,7 @@ bool MassStorage_t::CmdRead10() {
         Rslt = SDRead(BlockAddress, Buf1, BlocksToRead);
 //        Uart.Printf("R2");
 //        Uart.Printf("%A\r", Buf1, 50, ' ');
-        if(Rslt == CH_SUCCESS) {
+        if(Rslt == HAL_SUCCESS) {
             Usb.PEpBulkIn->WaitUntilReady();
             Usb.PEpBulkIn->StartTransmitBuf(Buf1, BytesToSend);
             CmdBlock.DataTransferLen -= BytesToSend;
@@ -261,7 +261,7 @@ bool MassStorage_t::CmdRead10() {
 //            Uart.Printf("\rR3");
             Rslt = SDRead(BlockAddress, Buf2, BlocksToRead);
 //            Uart.Printf("R4");
-            if(Rslt == CH_SUCCESS) {
+            if(Rslt == HAL_SUCCESS) {
                 Usb.PEpBulkIn->WaitUntilReady();
                 Usb.PEpBulkIn->StartTransmitBuf(Buf2, BytesToSend);
                 CmdBlock.DataTransferLen -= BytesToSend;
@@ -305,7 +305,7 @@ bool MassStorage_t::CmdWrite10() {
     if(ReadWriteCommon(&BlockAddress, &TotalBlocks) == false) return false;
 //    Uart.Printf("Addr=%u; Len=%u\r", BlockAddress, TotalBlocks);
     uint32_t BlocksToWrite1, BlocksToWrite2=0, BytesToReceive1, BytesToReceive2=0;
-    bool Rslt = CH_SUCCESS;
+    bool Rslt = HAL_SUCCESS;
     // Fill Buf1
     BytesToReceive1 = MIN(MS_DATABUF_SZ, TotalBlocks * MMCSD_BLOCK_SIZE);
     BlocksToWrite1  = BytesToReceive1 / MMCSD_BLOCK_SIZE;
@@ -326,7 +326,7 @@ bool MassStorage_t::CmdWrite10() {
         }
         // Write Buf1 to SD
         Rslt = SDWrite(BlockAddress, Buf1, BlocksToWrite1);
-        if(Rslt != CH_SUCCESS) {
+        if(Rslt != HAL_SUCCESS) {
             Uart.Printf("Wr1 fail\r");
             return false;
         }
@@ -348,7 +348,7 @@ bool MassStorage_t::CmdWrite10() {
         }
         // Write Buf2 to SD
         Rslt = SDWrite(BlockAddress, Buf2, BlocksToWrite2);
-        if(Rslt != CH_SUCCESS) {
+        if(Rslt != HAL_SUCCESS) {
             Uart.Printf("Wr2 fail\r");
             return false;
         }

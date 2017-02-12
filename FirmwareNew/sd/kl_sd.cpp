@@ -13,7 +13,7 @@
 #include "kl_lib.h"
 
 sd_t SD;
-extern Semaphore semSDRW;
+extern semaphore_t semSDRW;
 
 void sd_t::Init() {
     IsReady = FALSE;
@@ -21,12 +21,12 @@ void sd_t::Init() {
     iniFile.PFile = &File;
 #endif
     // Bus pins
-    PinSetupAlterFunc(GPIOC,  8, omPushPull, pudPullUp, AF12, ps50MHz); // DAT0
-    PinSetupAlterFunc(GPIOC,  9, omPushPull, pudPullUp, AF12, ps50MHz); // DAT1
-    PinSetupAlterFunc(GPIOC, 10, omPushPull, pudPullUp, AF12, ps50MHz); // DAT2
-    PinSetupAlterFunc(GPIOC, 11, omPushPull, pudPullUp, AF12, ps50MHz); // DAT3
-    PinSetupAlterFunc(GPIOC, 12, omPushPull, pudNone,   AF12, ps50MHz); // CLK
-    PinSetupAlterFunc(GPIOD,  2, omPushPull, pudPullUp, AF12, ps50MHz); // CMD
+    PinSetupAlterFunc(GPIOC,  8, omPushPull, pudPullUp, AF12); // DAT0
+    PinSetupAlterFunc(GPIOC,  9, omPushPull, pudPullUp, AF12); // DAT1
+    PinSetupAlterFunc(GPIOC, 10, omPushPull, pudPullUp, AF12); // DAT2
+    PinSetupAlterFunc(GPIOC, 11, omPushPull, pudPullUp, AF12); // DAT3
+    PinSetupAlterFunc(GPIOC, 12, omPushPull, pudNone,   AF12); // CLK
+    PinSetupAlterFunc(GPIOD,  2, omPushPull, pudPullUp, AF12); // CMD
     // Power pin
 //    PinSetupOut(GPIOC, 4, omPushPull, pudNone);
 //    PinClear(GPIOC, 4); // Power on
@@ -49,7 +49,7 @@ void sd_t::Init() {
         return;
     }
     // Init RW semaphore
-    chSemInit(&semSDRW, 1);
+    chSemObjectInit(&semSDRW, 1);
     IsReady = TRUE;
 }
 
@@ -84,7 +84,7 @@ uint8_t iniFile_t::ReadString(const char *ASection, const char *AKey, char **PPO
         if((*StartP != '[') or (*StartP == ';') or (*StartP == '#')) continue;
         EndP = strchr(StartP, ']');
         if((EndP == NULL) or ((int32_t)(EndP-StartP-1) != len)) continue;
-    } while (strnicmp(StartP+1, ASection, len) != 0);
+    } while (strncmp(StartP+1, ASection, len) != 0);
 
     // Section found, find the key
     len = strlen(AKey);
@@ -97,7 +97,7 @@ uint8_t iniFile_t::ReadString(const char *ASection, const char *AKey, char **PPO
         if((*StartP == ';') or (*StartP == '#')) continue;
         EndP = strchr(StartP, '=');
         if(EndP == NULL) continue;
-    } while(((int32_t)(skiptrailing(EndP, StartP)-StartP) != len or strnicmp(StartP, AKey, len) != 0));
+    } while(((int32_t)(skiptrailing(EndP, StartP)-StartP) != len or strncmp(StartP, AKey, len) != 0));
 
     // Process Key's value
     StartP = skipleading(EndP + 1);
@@ -158,9 +158,9 @@ uint8_t iniFile_t::ReadArray(const char *ASection, const char *AKey, uint8_t *p,
 extern "C" {
 #endif
 
-bool_t sdc_lld_is_card_inserted(SDCDriver *sdcp) { return TRUE; }
+bool sdc_lld_is_card_inserted(SDCDriver *sdcp) { return TRUE; }
 
-bool_t sdc_lld_is_write_protected(SDCDriver *sdcp) { return FALSE; }
+bool sdc_lld_is_write_protected(SDCDriver *sdcp) { return FALSE; }
 
 #ifdef __cplusplus
 }

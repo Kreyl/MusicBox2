@@ -37,7 +37,6 @@ public:
 #endif
 
 #if 1 // ======================== Single Led Smooth ============================
-#define LED_Smooth
 void LedSmoothTmrCallback(void *p);
 
 class LedSmooth_t : public BaseSequencer_t<LedSmoothChunk_t> {
@@ -77,7 +76,6 @@ public:
         IChnl.Init();
         SetBrightness(0);
     }
-    void SetPwmFrequencyHz(uint32_t AFrequency) { IChnl.SetFrequencyHz(AFrequency); }
     void SetBrightness(uint16_t ABrightness) { IChnl.Set(ABrightness); }
 };
 #endif
@@ -111,13 +109,13 @@ public:
 };
 #endif
 
-#if 0 // =========================== LedRGB Parent =============================
-#define LED_RGB_Parent
+#if 1 // =========================== LedRGB Parent =============================
 void LedRGBTmrCallback(void *p);
 
 class LedRGBParent_t : public BaseSequencer_t<LedRGBChunk_t> {
 protected:
     const PinOutputPWM_t  R, G, B;
+    const uint32_t PWMFreq;
     Color_t ICurrColor;
     void ISwitchOff() {
         SetColor(clBlack);
@@ -137,12 +135,7 @@ protected:
                 if(ICurrColor == IPCurrentChunk->Color) IPCurrentChunk++;
                 else { // Not completed
                     // Calculate time to next adjustment
-                    uint32_t DelayR = (ICurrColor.R == IPCurrentChunk->Color.R)? 0 : ClrCalcDelay(ICurrColor.R, IPCurrentChunk->Value);
-                    uint32_t DelayG = (ICurrColor.G == IPCurrentChunk->Color.G)? 0 : ClrCalcDelay(ICurrColor.G, IPCurrentChunk->Value);
-                    uint32_t DelayB = (ICurrColor.B == IPCurrentChunk->Color.B)? 0 : ClrCalcDelay(ICurrColor.B, IPCurrentChunk->Value);
-                    uint32_t Delay = DelayR;
-                    if(DelayG > Delay) Delay = DelayG;
-                    if(DelayB > Delay) Delay = DelayB;
+                    uint32_t Delay = ICurrColor.DelayToNextAdj(IPCurrentChunk->Color, IPCurrentChunk->Value);
                     SetupDelay(Delay);
                     return sltBreak;
                 } // Not completed
@@ -156,26 +149,31 @@ public:
     LedRGBParent_t(
             const PwmSetup_t ARed,
             const PwmSetup_t AGreen,
-            const PwmSetup_t ABlue) :
-        BaseSequencer_t(), R(ARed), G(AGreen), B(ABlue) {}
+            const PwmSetup_t ABlue,
+            const uint32_t APWMFreq) :
+        BaseSequencer_t(), R(ARed), G(AGreen), B(ABlue), PWMFreq(APWMFreq) {}
     void Init() {
         R.Init();
+        R.SetFrequencyHz(PWMFreq);
         G.Init();
+        G.SetFrequencyHz(PWMFreq);
         B.Init();
+        B.SetFrequencyHz(PWMFreq);
         SetColor(clBlack);
     }
     virtual void SetColor(Color_t AColor) {}
 };
 #endif
 
-#if 0 // ============================== LedRGB =================================
+#if 1 // ============================== LedRGB =================================
 class LedRGB_t : public LedRGBParent_t {
 public:
     LedRGB_t(
             const PwmSetup_t ARed,
             const PwmSetup_t AGreen,
-            const PwmSetup_t ABlue) :
-                LedRGBParent_t(ARed, AGreen, ABlue) {}
+            const PwmSetup_t ABlue,
+            const uint32_t AFreq = 0xFFFFFFFF) :
+                LedRGBParent_t(ARed, AGreen, ABlue, AFreq) {}
 
     void SetColor(Color_t AColor) {
         R.Set(AColor.R);
@@ -206,6 +204,24 @@ public:
         R.Set(AColor.R);
         G.Set(AColor.G);
         B.Set(AColor.B);
+    }
+};
+#endif
+
+#if 1 // ====================== LedRGB with Luminocity =========================
+class LedRGBLum_t : public LedRGBParent_t {
+public:
+    LedRGBLum_t(
+            const PwmSetup_t ARed,
+            const PwmSetup_t AGreen,
+            const PwmSetup_t ABlue,
+            const uint32_t AFreq = 0xFFFFFFFF) :
+                LedRGBParent_t(ARed, AGreen, ABlue, AFreq) {}
+
+    void SetColor(Color_t AColor) {
+        R.Set(AColor.R * AColor.Lum);
+        G.Set(AColor.G * AColor.Lum);
+        B.Set(AColor.B * AColor.Lum);
     }
 };
 #endif

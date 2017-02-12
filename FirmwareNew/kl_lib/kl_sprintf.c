@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "chtypes.h"
+#include "board.h"
 
 #if PRINTF_FLOAT_EN
 #define FLOAT_PRECISION     9
