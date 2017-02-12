@@ -240,7 +240,6 @@ public:
     }
     void CallbackHandler() {    // Call it inside callback
         chSysLockFromISR();
-//        chSysUnlock()
         chEvtSignalI(PThread, EvtMsk);
         if(TmrType == tktPeriodic) StartI();
         chSysUnlockFromISR();
