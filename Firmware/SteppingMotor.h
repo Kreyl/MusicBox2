@@ -55,7 +55,7 @@ private:
         if(chVTIsArmedI(&StepTMR)) chVTResetI(&StepTMR);
         chVTSetI(&StepTMR, MS2ST(StepInterval), StepperTmrCallback, this);
     }
-    void Task();
+    void TaskI();
 
 public:
     SteppingMotor_t( MotorSetupPins_t AMotor, uint8_t APinSHDN, uint8_t AStepAngle, uint16_t AGearRatio) :
@@ -64,7 +64,7 @@ public:
     void StepperTmrCallbacHandler() {
         chSysLockFromISR();
         StepperTmrStsrtI();
-        Task();
+        TaskI();
         chSysUnlockFromISR();
     }
     void Init(const PowerDelay_t Delay = pdDelay) {
@@ -73,7 +73,7 @@ public:
         PinSetupOut(IMotor.PGpio, IMotor.PinB1, omPushPull);
         PinSetupOut(IMotor.PGpio, IMotor.PinB2, omPushPull);
         PinSetupOut(IMotor.PGpio, PinSHDN, omPushPull);
-        PinSet(IMotor.PGpio, PinSHDN);
+        PinSetHi(IMotor.PGpio, PinSHDN);
         if (Delay) chThdSleepMicroseconds(1500);
     }
     void Start() {
@@ -99,14 +99,14 @@ public:
     void Stop() {
         chVTReset(&StepTMR);
         StepIndex = 0;
-        PinClear(IMotor.PGpio, IMotor.PinA1);
-        PinClear(IMotor.PGpio, IMotor.PinA2);
-        PinClear(IMotor.PGpio, IMotor.PinB1);
-        PinClear(IMotor.PGpio, IMotor.PinB2);
+        PinSetLo(IMotor.PGpio, IMotor.PinA1);
+        PinSetLo(IMotor.PGpio, IMotor.PinA2);
+        PinSetLo(IMotor.PGpio, IMotor.PinB1);
+        PinSetLo(IMotor.PGpio, IMotor.PinB2);
     }
     void Sleep() {
         Stop();
-        PinClear(IMotor.PGpio, PinSHDN);
+        PinSetLo(IMotor.PGpio, PinSHDN);
     }
 };
 

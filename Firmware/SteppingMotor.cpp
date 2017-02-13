@@ -36,7 +36,7 @@ void SteppingMotor_t::SetSpeed(int32_t Speed, const StepMode_t Mode = smLikeBefo
     Uart.Printf("\r Step Interval %u mS", StepInterval);
 }
 
-void SteppingMotor_t::Task() {
+void SteppingMotor_t::TaskI() {
 //    uint16_t temp = PortGetValue(IMotor.PGpio);
 //    temp = temp | (FullStepOperation[StepIndex] << PinA1);
 //    PortSetValue(IMotor.PGpio, temp);
@@ -44,79 +44,79 @@ void SteppingMotor_t::Task() {
     if (MotorMode == smFullStep) {
         switch(StepIndex) {
             case 0: // 0b1010
-                PinSet  (IMotor.PGpio, IMotor.PinA1);
-                PinClear(IMotor.PGpio, IMotor.PinA2);
-                PinSet  (IMotor.PGpio, IMotor.PinB1);
-                PinClear(IMotor.PGpio, IMotor.PinB2);
+                PinSetHi(IMotor.PGpio, IMotor.PinA1);
+                PinSetLo(IMotor.PGpio, IMotor.PinA2);
+                PinSetHi(IMotor.PGpio, IMotor.PinB1);
+                PinSetLo(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 1: // 0b0110
-                PinClear(IMotor.PGpio, IMotor.PinA1);
-                PinSet  (IMotor.PGpio, IMotor.PinA2);
-                PinSet  (IMotor.PGpio, IMotor.PinB1);
-                PinClear(IMotor.PGpio, IMotor.PinB2);
+                PinSetLo(IMotor.PGpio, IMotor.PinA1);
+                PinSetHi(IMotor.PGpio, IMotor.PinA2);
+                PinSetHi(IMotor.PGpio, IMotor.PinB1);
+                PinSetLo(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 2: // 0b0101
-                PinClear(IMotor.PGpio, IMotor.PinA1);
-                PinSet  (IMotor.PGpio, IMotor.PinA2);
-                PinClear(IMotor.PGpio, IMotor.PinB1);
-                PinSet  (IMotor.PGpio, IMotor.PinB2);
+                PinSetLo(IMotor.PGpio, IMotor.PinA1);
+                PinSetHi(IMotor.PGpio, IMotor.PinA2);
+                PinSetLo(IMotor.PGpio, IMotor.PinB1);
+                PinSetHi(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 3: // 0b1001
-                PinSet  (IMotor.PGpio, IMotor.PinA1);
-                PinClear(IMotor.PGpio, IMotor.PinA2);
-                PinClear(IMotor.PGpio, IMotor.PinB1);
-                PinSet  (IMotor.PGpio, IMotor.PinB2);
+                PinSetHi(IMotor.PGpio, IMotor.PinA1);
+                PinSetLo(IMotor.PGpio, IMotor.PinA2);
+                PinSetLo(IMotor.PGpio, IMotor.PinB1);
+                PinSetHi(IMotor.PGpio, IMotor.PinB2);
                 break;
         }
     } else if (MotorMode == smHalftep) {
         switch(StepIndex) {
             case 0: // 0b1010
-                PinSet  (IMotor.PGpio, IMotor.PinA1);
-                PinClear(IMotor.PGpio, IMotor.PinA2);
-                PinSet  (IMotor.PGpio, IMotor.PinB1);
-                PinClear(IMotor.PGpio, IMotor.PinB2);
+                PinSetHi(IMotor.PGpio, IMotor.PinA1);
+                PinSetLo(IMotor.PGpio, IMotor.PinA2);
+                PinSetHi(IMotor.PGpio, IMotor.PinB1);
+                PinSetLo(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 1: // 0b0010
-                PinClear(IMotor.PGpio, IMotor.PinA1);
-                PinClear(IMotor.PGpio, IMotor.PinA2);
-                PinSet  (IMotor.PGpio, IMotor.PinB1);
-                PinClear(IMotor.PGpio, IMotor.PinB2);
+                PinSetLo(IMotor.PGpio, IMotor.PinA1);
+                PinSetLo(IMotor.PGpio, IMotor.PinA2);
+                PinSetHi(IMotor.PGpio, IMotor.PinB1);
+                PinSetLo(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 2: // 0b0110
-                PinClear(IMotor.PGpio, IMotor.PinA1);
-                PinSet  (IMotor.PGpio, IMotor.PinA2);
-                PinSet  (IMotor.PGpio, IMotor.PinB1);
-                PinClear(IMotor.PGpio, IMotor.PinB2);
+                PinSetLo(IMotor.PGpio, IMotor.PinA1);
+                PinSetHi(IMotor.PGpio, IMotor.PinA2);
+                PinSetHi(IMotor.PGpio, IMotor.PinB1);
+                PinSetLo(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 3: // 0b0100
-                PinClear(IMotor.PGpio, IMotor.PinA1);
-                PinSet  (IMotor.PGpio, IMotor.PinA2);
-                PinClear(IMotor.PGpio, IMotor.PinB1);
-                PinClear(IMotor.PGpio, IMotor.PinB2);
+                PinSetLo(IMotor.PGpio, IMotor.PinA1);
+                PinSetHi(IMotor.PGpio, IMotor.PinA2);
+                PinSetLo(IMotor.PGpio, IMotor.PinB1);
+                PinSetLo(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 4: // 0b0101
-                PinClear(IMotor.PGpio, IMotor.PinA1);
-                PinSet  (IMotor.PGpio, IMotor.PinA2);
-                PinClear(IMotor.PGpio, IMotor.PinB1);
-                PinSet  (IMotor.PGpio, IMotor.PinB2);
+                PinSetLo(IMotor.PGpio, IMotor.PinA1);
+                PinSetHi(IMotor.PGpio, IMotor.PinA2);
+                PinSetLo(IMotor.PGpio, IMotor.PinB1);
+                PinSetHi(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 5: // 0b0001
-                PinClear(IMotor.PGpio, IMotor.PinA1);
-                PinClear(IMotor.PGpio, IMotor.PinA2);
-                PinClear(IMotor.PGpio, IMotor.PinB1);
-                PinSet  (IMotor.PGpio, IMotor.PinB2);
+                PinSetLo(IMotor.PGpio, IMotor.PinA1);
+                PinSetLo(IMotor.PGpio, IMotor.PinA2);
+                PinSetLo(IMotor.PGpio, IMotor.PinB1);
+                PinSetHi(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 6: // 0b1001
-                PinSet  (IMotor.PGpio, IMotor.PinA1);
-                PinClear(IMotor.PGpio, IMotor.PinA2);
-                PinClear(IMotor.PGpio, IMotor.PinB1);
-                PinSet  (IMotor.PGpio, IMotor.PinB2);
+                PinSetHi(IMotor.PGpio, IMotor.PinA1);
+                PinSetLo(IMotor.PGpio, IMotor.PinA2);
+                PinSetLo(IMotor.PGpio, IMotor.PinB1);
+                PinSetHi(IMotor.PGpio, IMotor.PinB2);
                 break;
             case 7: // 0b1000
-                PinSet  (IMotor.PGpio, IMotor.PinA1);
-                PinClear(IMotor.PGpio, IMotor.PinA2);
-                PinClear(IMotor.PGpio, IMotor.PinB1);
-                PinClear(IMotor.PGpio, IMotor.PinB2);
+                PinSetHi(IMotor.PGpio, IMotor.PinA1);
+                PinSetLo(IMotor.PGpio, IMotor.PinA2);
+                PinSetLo(IMotor.PGpio, IMotor.PinB1);
+                PinSetLo(IMotor.PGpio, IMotor.PinB2);
                 break;
         }
     }

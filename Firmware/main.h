@@ -32,7 +32,7 @@ private:
 //    AppState_t SystemState = asDefault;
 
 public:
-    void InitThread() { PThread = chThdGetSelfX(); } //chThdSelf()
+    void InitThread() { PThread = chThdGetSelfX(); }
     void SignalEvt(uint32_t EvtMsk) {
         chSysLock();
         chEvtSignalI(PThread, EvtMsk);

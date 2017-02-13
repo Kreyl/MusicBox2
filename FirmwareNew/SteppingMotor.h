@@ -55,7 +55,7 @@ private:
         if(chVTIsArmedI(&StepTMR)) chVTResetI(&StepTMR);
         chVTSetI(&StepTMR, MS2ST(StepInterval), StepperTmrCallback, this);
     }
-    void Task();
+    void TaskI();
 
 public:
     SteppingMotor_t( MotorSetupPins_t AMotor, uint8_t APinSHDN, uint8_t AStepAngle, uint16_t AGearRatio) :
@@ -64,7 +64,7 @@ public:
     void StepperTmrCallbacHandler() {
         chSysLockFromISR();
         StepperTmrStsrtI();
-        Task();
+        TaskI();
         chSysUnlockFromISR();
     }
     void Init(const PowerDelay_t Delay = pdDelay) {

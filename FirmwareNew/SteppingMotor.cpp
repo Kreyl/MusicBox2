@@ -36,7 +36,7 @@ void SteppingMotor_t::SetSpeed(int32_t Speed, const StepMode_t Mode = smLikeBefo
     Uart.Printf("\r Step Interval %u mS", StepInterval);
 }
 
-void SteppingMotor_t::Task() {
+void SteppingMotor_t::TaskI() {
 //    uint16_t temp = PortGetValue(IMotor.PGpio);
 //    temp = temp | (FullStepOperation[StepIndex] << PinA1);
 //    PortSetValue(IMotor.PGpio, temp);
