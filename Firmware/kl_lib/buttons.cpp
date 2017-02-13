@@ -15,7 +15,14 @@
 
 CircBuf_t<BtnEvtInfo_t, BTNS_EVT_Q_LEN> EvtBuf;
 
-// ==== Inner use ====
+#if BTN_GETSTATE_REQUIRED
+static PinSnsState_t IBtnState[BUTTONS_CNT];
+PinSnsState_t GetBtnState(uint8_t BtnID) {
+    if(BtnID > BUTTONS_CNT) return pssNone;
+    else return IBtnState[BtnID];
+}
+#endif
+
 #if BTN_LONGPRESS
 static bool IsLongPress[BUTTONS_CNT];
 static systime_t LongPressTimer;
@@ -27,15 +34,19 @@ static systime_t RepeatTimer;
 #if BTN_COMBO
     bool IsCombo;
 #endif
-void AddEvtToQueue(BtnEvtInfo_t Evt);
-void AddEvtToQueue(BtnEvt_t AType, uint8_t KeyIndx);
+static void AddEvtToQueue(BtnEvtInfo_t Evt);
+static void AddEvtToQueue(BtnEvt_t AType, uint8_t KeyIndx);
 
 // ========================= Postprocessor for PinSns ==========================
 void ProcessButtons(PinSnsState_t *BtnState, uint32_t Len) {
+//    Uart.Printf("  %S\r", __FUNCTION__);
 //    Uart.Printf("\r%A", BtnState, Len, ' ');
     for(uint8_t i=0; i<BUTTONS_CNT; i++) {
+#if BTN_GETSTATE_REQUIRED
+        IBtnState[i] = BtnState[i];
+#endif
         // ==== Button Press ====
-        if(BtnState[i] == BTN_PRESS_STATE) {
+        if(BtnState[i] == BTN_PRESSING_STATE) {
 #if BTN_LONGPRESS
             IsLongPress[i] = false;
 #endif
@@ -62,19 +73,22 @@ void ProcessButtons(PinSnsState_t *BtnState, uint32_t Len) {
             }
             else IsCombo = false;
 #endif // combo
-            // Single key pressed, no combo
-            AddEvtToQueue(bePress, i);  // Add single keypress
+
+#if BTN_SHORTPRESS // Single key pressed, no combo
+            AddEvtToQueue(beShortPress, i);  // Add single keypress
+#endif
+
 #if BTN_LONGPRESS
-            LongPressTimer = chTimeNow();
+            LongPressTimer = chVTGetSystemTimeX();
 #endif
 #if BTN_REPEAT
-            RepeatTimer = chTimeNow();
+            RepeatTimer = chVTGetSystemTimeX();
 #endif
         } // if press
 
         // ==== Button Release ====
 #if BTN_COMBO || BTN_RELEASE
-        else if(BtnState[i] == BTN_RELEASE_STATE) {
+        else if(BtnState[i] == BTN_RELEASING_STATE) {
 #if BTN_COMBO // Check if combo completely released
             if(IsCombo) {
                 IsCombo = false;
@@ -103,7 +117,7 @@ void ProcessButtons(PinSnsState_t *BtnState, uint32_t Len) {
 #if BTN_LONGPRESS // Check if long press
             if(!IsLongPress[i]) {
 //                Uart.Printf("Elapsed %u\r", chVTTimeElapsedSinceX(LongPressTimer));
-                if(TimeElapsed(&LongPressTimer, BTN_LONGPRESS_DELAY_MS)) {
+                if(chVTTimeElapsedSinceX(LongPressTimer) >= MS2ST(BTN_LONGPRESS_DELAY_MS)) {
                     IsLongPress[i] = true;
                     AddEvtToQueue(beLongPress, i);
                 }
@@ -127,6 +141,7 @@ void ProcessButtons(PinSnsState_t *BtnState, uint32_t Len) {
     } // for i
 }
 
+__unused
 void AddEvtToQueue(BtnEvtInfo_t Evt) {
     chSysLock();
     EvtBuf.Put(&Evt);
@@ -139,9 +154,9 @@ void AddEvtToQueue(BtnEvt_t AType, uint8_t KeyIndx) {
     IEvt.Type = AType;
 #if BTN_COMBO
     IEvt.BtnCnt = 1;
-#endif
-#if BUTTONS_CNT != 1
     IEvt.BtnID[0] = KeyIndx;
+#elif BUTTONS_CNT != 1
+    IEvt.BtnID = KeyIndx;
 #endif
     chSysLock();
     EvtBuf.Put(&IEvt);

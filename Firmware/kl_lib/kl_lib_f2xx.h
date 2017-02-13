@@ -16,9 +16,14 @@
 #include "string.h"     // for memcpy
 #include <cstdlib>      // for strtoul
 
+#include "board.h"
+
 
 #if 1 // ============================ General ==================================
-#define PACKED __attribute__ ((__packed__))
+#define __noreturn      __attribute__((noreturn))
+#define __packed        __attribute__((__packed__))
+#define __align4        __attribute__((aligned (4)))
+// Also remember __unused and __always_inline
 #ifndef countof
 #define countof(A)  (sizeof(A)/sizeof(A[0]))
 #endif
@@ -335,6 +340,7 @@ static inline void PinClear  (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber
 static inline void PinToggle (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { PGpioPort->ODR  ^= (uint32_t)(1<<APinNumber); }
 // Check state
 static inline bool PinIsSet(GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { return (PGpioPort->IDR & (uint32_t)(1<<APinNumber)); }
+static inline bool PinIsHi(GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { return (PGpioPort->IDR & (uint32_t)(1<<APinNumber)); }
 
 // Setup
 static void PinClockEnable(GPIO_TypeDef *PGpioPort) {
@@ -366,7 +372,7 @@ static inline void PinSetupOut(
     PGpioPort->OSPEEDR &= ~(0b11 << (APinNumber*2)); // clear previous bits
     PGpioPort->OSPEEDR |= (uint32_t)ASpeed << (APinNumber*2);
 }
-static inline void PinSetupIn(
+static inline void PinSetupInput(
         GPIO_TypeDef *PGpioPort,
         const uint16_t APinNumber,
         const PinPullUpDown_t APullUpDown
@@ -502,10 +508,11 @@ class PinInput_t {
 private:
     const PinInputSetup_t ISetup;
 public:
-    void Init() const { PinSetupIn(ISetup.PGpio, ISetup.Pin, ISetup.PullUpDown); }
+    void Init() const { PinSetupInput(ISetup.PGpio, ISetup.Pin, ISetup.PullUpDown); }
     void Deinit() const { PinSetupAnalog(ISetup.PGpio, ISetup.Pin); }
     bool IsHi() const { return PinIsSet(ISetup.PGpio, ISetup.Pin); }
     PinInput_t(const PinInputSetup_t &ASetup) : ISetup(ASetup) {}
+    PinInput_t(GPIO_TypeDef *PGpio, uint16_t Pin, PinPullUpDown_t PullUpDown) : ISetup({PGpio, Pin, PullUpDown}) {}
 };
 #endif
 

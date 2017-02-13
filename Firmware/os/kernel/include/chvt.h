@@ -212,6 +212,7 @@ typedef struct {
  * @api
  */
 #define chTimeNow() (vtlist.vt_systime)
+#define chVTGetSystemTimeX() (vtlist.vt_systime)
 /** @} */
 
 extern VTList vtlist;

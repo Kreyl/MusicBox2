@@ -80,7 +80,7 @@ union VsCmd_t {
         uint8_t OpCode;
         uint8_t Address;
         uint16_t Data;
-    } PACKED;
+    } __packed;
     msg_t Msg;
 };
 

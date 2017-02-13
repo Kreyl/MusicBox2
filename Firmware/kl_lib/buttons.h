@@ -11,14 +11,13 @@
 #include "kl_lib_f2xx.h"
 #include "kl_buf.h"
 
-#include "PinSnsSettings.h"
 #include "SimpleSensors.h"
 
 #if SIMPLESENSORS_ENABLED
 
 /*
  * Example:
-if(EvtMsk & EVT_BUTTONS) {
+if(Evt & EVT_BUTTONS) {
     BtnEvtInfo_t EInfo;
     while(BtnGetEvt(&EInfo) == OK) {
         if(EInfo.Type == bePress) {
@@ -28,19 +27,20 @@ if(EvtMsk & EVT_BUTTONS) {
 
         }
     }
-}
  */
-#ifndef BUTTONS_CNT
-#define BUTTONS_CNT     2
-#endif
-// Select required events. BtnPress is a must.
-#define BTN_RELEASE     TRUE
-#define BTN_LONGPRESS   TRUE    // Send LongPress evt
-#define BTN_REPEAT      FALSE   // Send Repeat evt
-#define BTN_COMBO       FALSE   // Allow combo
 
-#define BTN_REPEAT_PERIOD_MS        180
-#define BTN_LONGPRESS_DELAY_MS      2007
+// ================================= Settings ==================================
+//#define BUTTONS_CNT                 1
+// Select required events etc.
+#define BTN_SHORTPRESS              TRUE   // beShortPress evt
+#define BTN_RELEASE                 FALSE
+#define BTN_LONGPRESS               FALSE    // Send LongPress evt
+#define BTN_REPEAT                  TRUE   // Send Repeat evt
+#define BTN_COMBO                   FALSE   // Allow combo
+#define BTN_GETSTATE_REQUIRED       FALSE
+
+#define BTN_REPEAT_PERIOD_MS        900
+#define BTN_LONGPRESS_DELAY_MS      1000
 #define BTN_DELAY_BEFORE_REPEAT_MS  (BTN_REPEAT_PERIOD_MS + BTN_LONGPRESS_DELAY_MS)
 
 #if BTN_COMBO
@@ -50,25 +50,38 @@ if(EvtMsk & EVT_BUTTONS) {
 #endif
 
 // Select convenient names
-enum BtnName_t {btnSelect=0, btnPlus=1, btnMinus=2};
+enum BtnName_t {btnUp=0, btnDown=1};
 
 // Define correct button behavior depending on schematic
-#define BTN_PRESS_STATE         pssFalling
-#define BTN_RELEASE_STATE       pssRising
-#define BTN_HOLDDOWN_STATE      pssLo
+#define BTN_IDLE_LOW                FALSE
+// =============================================================================
+
+// Selected depending on Idle state
+#if BTN_IDLE_LOW
+#define BTN_IDLE_STATE              pssLo
+#define BTN_HOLDDOWN_STATE          pssHi
+#define BTN_PRESSING_STATE          pssRising
+#define BTN_RELEASING_STATE         pssFalling
+#else
+#define BTN_IDLE_STATE              pssHi
+#define BTN_HOLDDOWN_STATE          pssLo
+#define BTN_PRESSING_STATE          pssFalling
+#define BTN_RELEASING_STATE         pssRising
+#endif
 
 // ==== Types ==== Do not touch
 // BtnEvent: contains info about event type, count of participating btns and array with btn IDs
-enum BtnEvt_t {bePress, beLongPress, beRelease, beCancel, beRepeat, beCombo};
+enum BtnEvt_t {beShortPress, beLongPress, beRelease, beCancel, beRepeat, beCombo};
 struct BtnEvtInfo_t {
     BtnEvt_t Type;
 #if BTN_COMBO
     uint8_t BtnCnt;
-#endif
-#if BUTTONS_CNT != 1
     uint8_t BtnID[BUTTONS_CNT];
+#elif BUTTONS_CNT != 1
+    uint8_t BtnID;
 #endif
 } __packed;
 
 uint8_t BtnGetEvt(BtnEvtInfo_t *PEvt);
+PinSnsState_t GetBtnState(uint8_t BtnID);
 #endif

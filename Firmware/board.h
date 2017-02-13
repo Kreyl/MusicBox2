@@ -47,8 +47,8 @@
 #define BUTTONS_CNT     2
 #define VolUpIndex      0
 #define VolDownIndex    1
-#define BTN_VolUp_pin   { GPIOA, 6, pudPullUp }
-#define BTN_VolDown_pin { GPIOA, 7, pudPullUp }
+#define BTN_VolUp_pin   GPIOA, 6, pudPullUp
+#define BTN_VolDown_pin GPIOA, 7, pudPullUp
 
 // Battery Management
 #define BattMeasSW_Pin  { GPIOC, 1, omOpenDrain }
@@ -68,8 +68,8 @@
 // Pulse Per Second, т.е импульсов (шагов) за секунду (целых шагов или микрошагов)
 
 // Sensors
-#define Sensor1_Pin     { GPIOB, 0, pudPullDown }
-#define Sensor2_Pin     { GPIOB, 1, pudPullDown }
+#define Sensor1_Pin     GPIOB, 0, pudPullDown
+#define Sensor2_Pin     GPIOB, 1, pudPullDown
 #define WKUP_pin        { GPIOA, 0, pudPullDown }
 
 // Switches
@@ -78,7 +78,7 @@
 #define PeriphySW_PinMode     omOpenDrain
 
 // External Power Input
-#define ExternalPWR_Pin    { GPIOA, 9, pudPullDown }
+#define ExternalPWR_Pin    GPIOA, 9, pudPullDown
 
 #endif // GPIO
 

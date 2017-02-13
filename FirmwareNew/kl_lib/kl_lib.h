@@ -499,7 +499,7 @@ __always_inline
 static inline void PinSetHi(GPIO_TypeDef *PGpio, uint32_t APin) { PGpio->BSRR = 1 << APin; }
 __always_inline
 static inline void PinSetLo(GPIO_TypeDef *PGpio, uint32_t APin) { PGpio->BSRR = 1 << (APin + 16);  }
-#elif defined STM32F0XX || || defined STM32F10X_LD_VL || defined STM32L4XX
+#elif defined STM32F0XX || defined STM32F10X_LD_VL || defined STM32L4XX
 __always_inline
 static inline void PinSetHi(GPIO_TypeDef *PGpio, uint32_t APin) { PGpio->BSRR = 1 << APin; }
 __always_inline

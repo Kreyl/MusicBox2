@@ -18,8 +18,6 @@
 //#include "WS2812BforTMR.h"
 
 App_t App;
-TmrKL_t TmrVolUpBig {MS2ST(1000), EVT_TMR_BigVolUp, tktPeriodic};
-TmrKL_t TmrVolDownBig {MS2ST(1000), EVT_TMR_BigVolDown, tktPeriodic};
 SndList_t SndList;
 Periphy_t Periphy;
 //PinInput_t WKUPpin(WKUP_pin);
@@ -66,12 +64,8 @@ int main() {
     Adc.Init();
     Adc.EnableVref();
 
-    // Virtual timers
-    TmrVolUpBig.Init();
-    TmrVolDownBig.Init();
-
     // Setup inputs
-    PinSensors.Init();
+    SimpleSensors::Init();
 //    WKUPpin.Init();
     // Setup outputs
     Periphy.InitSwich();
@@ -121,7 +115,7 @@ void App_t::PowerON() {
 }
 
 
-//* TmrCheckBtn.InitAndStart(chThdGetSelfX());
+
 __attribute__ ((__noreturn__))
 void App_t::ITask() {
 
@@ -146,41 +140,24 @@ while(true) {
     }
 
     if(EvtMsk & EVT_BUTTONS) {
+//        Uart.Printf("BtnsEvt\r");
         BtnEvtInfo_t EInfo;
         while(BtnGetEvt(&EInfo) == OK) {
-            if(EInfo.Type == bePress) {
-                switch(EInfo.BtnID[0]) {
-                    case VolUpIndex:
-                        Sound.VolumeIncrease();
-//                        Uart.Printf("\r BTN 1 up");
-                        break;
-                    case VolDownIndex:
-                        Sound.VolumeDecrease();
-//                        Uart.Printf("\r BTN 2 dovn");
-                        break;
+            if(EInfo.Type == beShortPress) {
+//                Uart.Printf("Btn %u press\r", EInfo.BtnID);
+                switch(EInfo.BtnID) {
+                    case VolUpIndex: Sound.VolumeIncrease(); break;
+                    case VolDownIndex: Sound.VolumeDecrease(); break;
                 }
             }
-            else if(EInfo.Type == beLongPress) {
-                switch(EInfo.BtnID[0]) {
-                    case VolUpIndex:
-                        TmrVolUpBig.Start();
-                        break;
-                    case VolDownIndex:
-                        TmrVolDownBig.Start();
-                        break;
+            else if(EInfo.Type == beRepeat) {
+//                Uart.Printf("Btn %u repeat\r", EInfo.BtnID);
+                switch(EInfo.BtnID) {
+                    case VolUpIndex:   Sound.VolumeIncreaseBig(); break;
+                    case VolDownIndex: Sound.VolumeDecreaseBig(); break;
                 }
-            }
-            else if(EInfo.Type == beRelease) {
-                TmrVolUpBig.Stop();
-                TmrVolDownBig.Stop();
             }
         }
-    }
-    if(EvtMsk & EVT_TMR_BigVolUp) {
-        Sound.VolumeIncreaseBig();
-    }
-    if(EvtMsk & EVT_TMR_BigVolDown) {
-        Sound.VolumeDecreaseBig();
     }
     if(EvtMsk & EVT_BOX1_CLOSED) {
         if (!Box2Opened.IsHi() and !ExternalPWR.IsHi()){
