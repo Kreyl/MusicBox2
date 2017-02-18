@@ -253,10 +253,16 @@ public:
 #endif
 
 #if 1 // ========================== Random =====================================
+#if defined STM32F2XX
+#define HW_RandF205    TRUE
+// Returns [0; TopValue]
+uint32_t Random(uint32_t TopValue);
+#else
 static inline int Random(int LowInclusive, int HighInclusive) {
     return (rand() % (HighInclusive + 1 - LowInclusive)) + LowInclusive;
 }
 static inline void RandomSeed(unsigned int Seed) { srand(Seed); }
+#endif
 #endif
 
 #if 1 // =========================== Time ======================================
@@ -418,7 +424,7 @@ public:
     void EnableDMAOnCapture(uint8_t CaptureReq) const { ITmr->DIER |= (1 << (CaptureReq + 8)); }
     void GenerateUpdateEvt()  const { ITmr->EGR = TIM_EGR_UG; }
     void EnableIrqOnUpdate()  const { ITmr->DIER |= TIM_DIER_UIE; }
-    void EnableIrq(uint32_t IrqChnl, uint32_t IrqPriority) const { nvicEnableVector(IrqChnl, IrqPriority); }
+    void EnableIrq(uint32_t IrqChnl, uint32_t IrqPriority) const { nvicEnableVector(IrqChnl, CORTEX_PRIO_MASK(IrqPriority)); }
     void ClearIrqPendingBit() const { ITmr->SR &= ~TIM_SR_UIF; }
 };
 #endif
@@ -776,7 +782,7 @@ static inline void JtagDisable() {
 }
 #endif
 
-#if 1 // ===================== Pin classes ========================
+#if 1 // =========================== Pin classes ===============================
 class PinOutput_t {
 private:
     GPIO_TypeDef *PGpio;
@@ -824,7 +830,7 @@ public:
 };
 #endif
 
-#if 1 // ==== External IRQ ====
+#if 1 // ========================== External IRQ ===============================
 enum ExtiTrigType_t {ttRising, ttFalling, ttRisingFalling};
 
 #if defined STM32L1XX || defined STM32F2XX || defined STM32F4XX || defined STM32L4XX
@@ -837,7 +843,7 @@ enum ExtiTrigType_t {ttRising, ttFalling, ttRisingFalling};
 
 /* Example:
  const PinIrq_t GPinDrdy {ACC_DRDY_PIN};
- GPinDrdy.Init(ACC_DRDY_GPIO, pudNone, ttRising);
+ GPinDrdy.Init(ttRising);
 */
 class PinIrq_t {
 public:
@@ -905,7 +911,7 @@ public:
         EXTI->PR    =  IrqMsk;      // Clean irq flag
 #endif
     }
-    void EnableIrq(const uint32_t Priority) const { nvicEnableVector(PIN2IRQ_CHNL(PinN), Priority); }
+    void EnableIrq(const uint32_t Priority) const { nvicEnableVector(PIN2IRQ_CHNL(PinN), CORTEX_PRIO_MASK(Priority)); }
     void DisableIrq() const { nvicDisableVector(PIN2IRQ_CHNL(PinN)); }
 #if defined STM32L4XX
     void CleanIrqFlag() const { EXTI->PR1 = (1 << PinN); }

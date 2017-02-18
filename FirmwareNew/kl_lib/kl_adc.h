@@ -14,8 +14,8 @@
 
 #define ADC_MAX_VALUE   4095
 
-#if defined STM32F4XX || defined STM32F0XX || defined STM32F2XX
 // =========================== Constants and Types =============================
+#if defined STM32F4XX || defined STM32F0XX || defined STM32F2XX
 #define ADC_VREFINT_CHNL    17  // All 4xx and F072 devices. Do not change.
 #define ADC_MAX_SEQ_LEN     16  // 1...16; Const, see ref man
 // ADC sampling_times
@@ -36,6 +36,26 @@ enum AdcSampleTime_t {
 #else
 #define ADC_VREFINT_CAL     (*(volatile uint16_t*)0x1FFF7A2A)	// for 4xx
 #endif
+enum ADCDiv_t {
+    adcDiv2 = (uint32_t)(0b00 << 16),
+    adcDiv4 = (uint32_t)(0b01 << 16),
+    adcDiv6 = (uint32_t)(0b10 << 16),
+    adcDiv8 = (uint32_t)(0b11 << 16),
+};
+#endif
+
+#if defined STM32F2XX_
+// ADC sampling_times
+enum AdcSampleTime_t {
+    ast1d5Cycles    = 0,
+    ast7d5Cycles    = 1,
+    ast13d5Cycles   = 2,
+    ast28d5Cycles   = 3,
+    ast41d5Cycles   = 4,
+    ast55d5Cycles   = 5,
+    ast71d5Cycles   = 6,
+    ast239d5Cycles  = 7
+};
 
 enum ADCDiv_t {
     adcDiv2 = (uint32_t)(0b00 << 16),
@@ -96,7 +116,7 @@ enum ADCDiv_t {
 };
 #endif
 
-#if defined STM32F4XX ||defined STM32L1XX
+#if defined STM32F4XX ||defined STM32L1XX || defined STM32F2XX
 class Adc_t {
 private:
     uint16_t IBuf[ADC_SEQ_LEN];
@@ -108,14 +128,16 @@ private:
 public:
     void EnableVref()  { ADC->CCR |= (uint32_t)ADC_CCR_TSVREFE; }
     void DisableVref() { ADC->CCR &= (uint32_t)(~ADC_CCR_TSVREFE); }
+//#ifndef STM32F2XX
     uint32_t GetVDAmV(uint32_t VrefADC) { return ((ADC_VREFINT_CAL * 3000UL) / VrefADC); }
+//#endif
     void Init();
     void StartMeasurement();
-    void Disable() { ADC1->CR2 = 0; }
+    void Disable() { ADC1->CR2 = 0; } // dmaStreamRelease(ADC_DMA);
     void ClockOff() { rccDisableADC1(FALSE); }
     uint32_t GetResult(uint8_t AChannel);
 };
-#endif // f4xx & L151
+#endif // f4xx & F2xx, L151
 
 #if defined STM32L4XX
 #define ADC_VREFINT_CHNL        0   // Do not change, see ref man
@@ -156,12 +178,17 @@ public:
     void EnableVref()  { ADC123_COMMON->CCR |= ADC_CCR_VREFEN; }
     void DisableVref() { ADC123_COMMON->CCR &= ADC_CCR_VREFEN; }
     void StartMeasurement();
-    uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue);
+    uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue) {
+        return ((3000UL * ADC_VREFINT_CAL / ADC_MAX_VALUE) * AdcChValue) / VrefValue;
+    }
+    uint32_t GetVDDA(uint32_t VrefValue) {
+        return (3000UL * ADC_VREFINT_CAL) / VrefValue;
+    }
     void Disable() { SET_BIT(ADC1->CR, ADC_CR_ADDIS); }
     void ClockOff() { rccDisableADC123(FALSE); }
     uint32_t GetResult(uint8_t AChannel);
 };
 #endif
 
-//extern Adc_t Adc;
+extern Adc_t Adc;
 #endif // ADC_REQUIRED

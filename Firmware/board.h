@@ -10,7 +10,7 @@
 #include <inttypes.h>
 
 // ==== General ====
-#define BOARD_NAME          "MusicBox2_v2"
+#define BOARD_NAME          "MusicBox_v2"
 #define APP_NAME            "MusicBox"
 
 // MCU type as defined in the ST header.

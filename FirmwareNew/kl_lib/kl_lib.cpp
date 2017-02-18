@@ -257,10 +257,22 @@ void Timer_t::SetUpdateFrequencyChangingTopValue(uint32_t FreqHz) const {
 }
 #endif
 
-#if TIMER_KL // =================== Virtual Timers =====================
+#if TIMER_KL // ======================= Virtual Timers =========================
 // Universal VirtualTimer callback
 void TmrKLCallback(void *p) {
     reinterpret_cast<TmrKL_t*>(p)->CallbackHandler();
+}
+#endif
+
+#if HW_RandF205 // =================== HW Random for F205 ======================
+uint32_t Random(uint32_t TopValue) {
+    rccEnableAHB2(RCC_AHB2ENR_RNGEN, FALSE);    // Enable clock
+    RNG->CR |= RNG_CR_RNGEN;                    // Enable generator
+    while(!(RNG->SR & RNG_SR_DRDY));            // Wait until ready
+    uint32_t Rnd = RNG->DR;
+    Rnd = Rnd % (TopValue + 1);
+    rccDisableAHB2(RCC_AHB2ENR_RNGEN, FALSE);   // Stop clock
+    return Rnd;
 }
 #endif
 

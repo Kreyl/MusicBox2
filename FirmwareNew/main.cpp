@@ -55,14 +55,14 @@ int main() {
     if(ClkResult) Uart.Printf("Clock failure\r");
 
     // USB related
-//    MassStorage.Init();
+    MassStorage.Init();
 
     // Battery: ADC
-//    PinSetupAnalog(BattMeas_Pin);
-//    BattMeasureSW.Init();
-//    BattMeasureSW.SetHi();
-//    Adc.Init();
-//    Adc.EnableVref();
+    PinSetupAnalog(BattMeas_Pin);
+    BattMeasureSW.Init();
+    BattMeasureSW.SetHi();
+    Adc.Init();
+    Adc.EnableVref();
 
     // Setup inputs
     SimpleSensors::Init();
@@ -82,35 +82,35 @@ void App_t::PowerON() {
     // Sound
     Sound.AmpfOn();
     Sound.Init();
-//    Sound.RegisterAppThd(chThdGetSelfX());
+    Sound.RegisterAppThd(chThdGetSelfX());
     // Stepping Motor
-//    Motor.Init(pdNoDelay);
-//    Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
+    Motor.Init(pdNoDelay);
+    Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
     // LED
 //    Backlight.Init();
 //    Backlight.SetBrightness(0);
 //    Backlight.SetPwmFrequencyHz(1000);
 
-//    if(Sleep::WasInStandby()) {
-//        Uart.Printf("\rWasStandby"); // WakeUp
-//        Sleep::DisableWakeupPin();
-//        Sleep::ClearStandbyFlag();
-////        SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
-//        //Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
-////        Uart.Printf("\r Load TrackNumber: %u", BackupSpc::ReadBackupRegister(TrackNumberBKP));
-//        BackupSpc::DisableAccess();
-//    }
-//    else {
-//        Uart.Printf("\rPowerON");
-//        Sound.SetVolume(DEF_VolLevel);
-//    }
-//    if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
-//        SndList.PlayRandomFileFromDir("0:\\");
-//        Motor.Start();
+    if(Sleep::WasInStandby()) {
+        Uart.Printf("\rWasStandby"); // WakeUp
+        Sleep::DisableWakeupPin();
+        Sleep::ClearStandbyFlag();
+        SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
+        //Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
+//        Uart.Printf("\r Load TrackNumber: %u", BackupSpc::ReadBackupRegister(TrackNumberBKP));
+        BackupSpc::DisableAccess();
+    }
+    else {
+        Uart.Printf("\rPowerON");
+        Sound.SetVolume(DEF_VolLevel);
+    }
+    if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
+        SndList.PlayRandomFileFromDir("0:\\");
+        Motor.Start();
 //        Backlight.StartOrContinue(lsqFadeIn);
-//    }
-//    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
-//    else ShutDown();
+    }
+    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
+    else ShutDown();
 }
 
 
@@ -171,20 +171,19 @@ while(true) {
     }
 
     if(EvtMsk & EVT_ADC_DONE) {
-//        uint16_t BatAdc = 2 * (Adc.GetResult(BAT_CHNL) - CallConst); // to count R divider
-//        uint8_t NewBatPercent = mV2PercentLiIon(BatAdc);
-//        Uart.Printf("mV=%u; percent=%u\r", BatAdc, NewBatPercent);
+        uint16_t BatAdc = 2 * (Adc.GetResult(BAT_CHNL) - CallConst); // to count R divider
+        uint8_t NewBatPercent = mV2PercentLiIon(BatAdc);
+        Uart.Printf("mV=%u; percent=%u\r", BatAdc, NewBatPercent);
 //        Adc.DisableVref();
     }
 
  // ==== USB connected/disconnected ====
     if(EvtMsk & EVT_USB_CONNECTED) {
-        Sound.Stop();
+//        Sound.Stop();
         Motor.Stop();
         Backlight.SetBrightness(0);
         chSysLock();
         Clk.SetFreq48Mhz();
-//        Clk.InitSysTick();
         chSysUnlock();
         Usb.Init();
         chThdSleepMilliseconds(540);
@@ -196,7 +195,6 @@ while(true) {
         MassStorage.Reset();
         chSysLock();
         Clk.SetFreq12Mhz();
-//        Clk.InitSysTick();
         chSysUnlock();
         Uart.Printf("\rUsb Off");
         if (!Box1Opened.IsHi() and !Box2Opened.IsHi())
@@ -205,7 +203,7 @@ while(true) {
             //        SD.Init();
             SndList.PlayRandomFileFromDir("0:\\");
             Motor.Start();
-            Backlight.StartOrContinue(lsqFadeIn);
+//            Backlight.StartOrContinue(lsqFadeIn);
         }
     }
 
@@ -258,9 +256,9 @@ void App_t::OnCmd(Shell_t *PShell) {
 
     else if(PCmd->NameIs("RUN_ADC")) {
 //        Adc.EnableVref();
-//        BattMeasureSW.SetLo(); // Connect R divider to GND
-//        chThdSleepMicroseconds(100);
-//        Adc.StartMeasurement();
+        BattMeasureSW.SetLo(); // Connect R divider to GND
+        chThdSleepMicroseconds(100);
+        Adc.StartMeasurement();
     }
 
     else PShell->Ack(CMD_UNKNOWN);
@@ -268,10 +266,8 @@ void App_t::OnCmd(Shell_t *PShell) {
 
 
 void App_t::ShutDown() {
-    Uart.Printf("\rDbgShutDown");
-    return;
 //    Sound.Shutdown();
-    Sound.Stop();
+//    Sound.Stop();
     Motor.Stop();
     chThdSleepMilliseconds(700);
 //    if (!WKUPpin.IsHi()){

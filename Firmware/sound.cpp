@@ -4,6 +4,7 @@
 #include "clocking.h"
 
 Sound_t Sound;
+PinIrq_t IDreq(VS_GPIO, VS_DREQ, pudPullDown);
 
 // Mode register
 //#define VS_MODE_REG_VALUE   0x0802  // Native SDI mode, Layer I + II enabled
@@ -19,8 +20,8 @@ extern "C" {
 CH_IRQ_HANDLER(VS_IRQ_HANDLER) {
     CH_IRQ_PROLOGUE();
     chSysLockFromISR();
-    Sound.IDreq.CleanIrqFlag();
-    Sound.IDreq.DisableIrq();
+    IDreq.CleanIrqFlag();
+    IDreq.DisableIrq();
     chEvtSignalI(Sound.PThread, VS_EVT_DREQ_IRQ);
     chSysUnlockFromISR();
     CH_IRQ_EPILOGUE();
@@ -133,7 +134,7 @@ void Sound_t::Init() {
     Clk.MCO1Enable(mco1HSE, mcoDiv1);   // Only after reset, as pins are grounded when Rst is Lo
     chThdSleepMilliseconds(7);
     // ==== DREQ IRQ ====
-    IDreq.Setup(VS_GPIO, VS_DREQ, ttRising);
+    IDreq.Init(ttRising);
     // ==== Thread ====
     PThread = chThdCreateStatic(waSoundThread, sizeof(waSoundThread), NORMALPRIO, (tfunc_t)SoundThread, NULL);
 #if VS_AMPF_EXISTS
@@ -203,7 +204,7 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
     // StartTransmissionIfNotBusy:
     if(IDmaIdle and IDreq.IsHi()) {
 //            Uart.PrintfI("\rTXinB");
-        IDreq.EnableIrqI(IRQ_PRIO_MEDIUM);
+        IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
         IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
     }
     chSysUnlock();

@@ -110,6 +110,8 @@ struct VsBuf_t {
 #define VS_EVT_DMA_DONE     (eventmask_t)8
 #define VS_EVT_DREQ_IRQ     (eventmask_t)16
 
+extern PinIrq_t IDreq;
+
 class Sound_t {
 private:
     Spi_t ISpi;
@@ -139,7 +141,7 @@ private:
         chSysLock();
         if(IDmaIdle and IDreq.IsHi()) {
 //            Uart.PrintfI("\rTXinB");
-            IDreq.EnableIrqI(IRQ_PRIO_MEDIUM);
+            IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
             IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
         }
         chSysUnlock();
@@ -198,7 +200,6 @@ public:
     void AmpfOff() { PinClear(VS_AMPF_GPIO, VS_AMPF_PIN); }
 #endif
     // Inner use
-    IrqPin_t IDreq;
     Thread *PThread;
     void IrqDreqHandler();
     void ITask();

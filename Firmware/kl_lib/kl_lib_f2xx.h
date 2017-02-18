@@ -5,8 +5,7 @@
  *      Author: kreyl
  */
 
-#ifndef KL_LIB_F2XX_H_
-#define KL_LIB_F2XX_H_
+#pragma once
 
 #include "stm32.h"
 #include "stdint-gcc.h"
@@ -70,11 +69,13 @@ enum BitOrder_t {boMSB, boLSB};
 enum LowHigh_t  {Low, High};
 enum RiseFall_t {Rising, Falling, RisingFalling, NoRiseNoFall};
 
-// Simple pseudofunctions
+// ==== Math ====
 #define MIN(a, b)   ( ((a)<(b))? (a) : (b) )
 #define MAX(a, b)   ( ((a)>(b))? (a) : (b) )
-#define TRIM_VALUE(v, Max)  { if(v > Max) v = Max; }
+#define ABS(a)      ( ((a) < 0)? -(a) : (a) )
+#define TRIM_VALUE(v, Max)  { if((v) > (Max)) (v) = (Max); }
 #define IS_LIKE(v, precise, deviation)  (((precise - deviation) < v) and (v < (precise + deviation)))
+#define BitIsSet(r, b)  ((r) & (b))
 
 #define ANY_OF_2(a, b1, b2)             (((a)==(b1)) or ((a)==(b2)))
 #define ANY_OF_3(a, b1, b2, b3)         (((a)==(b1)) or ((a)==(b2)) or ((a)==(b3)))
@@ -184,30 +185,34 @@ public:
 #if 1 // ======================= Power and backup unit =========================
 // See Programming manual: http://www.st.com/content/ccc/resource/technical/document/programming_manual/6c/3a/cb/e7/e4/ea/44/9b/DM00046982.pdf/files/DM00046982.pdf/jcr:content/translations/en.DM00046982.pdf
 // On writes, write 0x5FA to VECTKEY, otherwise the write is ignored. 4 is SYSRESETREQ: System reset request
+#define REBOOT()                SCB->AIRCR = 0x05FA0004
 
-#define REBOOT()                SCB_AIRCR = (AIRCR_VECTKEY | 0x04)
-
+#if defined STM32F2XX || defined STM32F4XX || defined STM32F10X_LD_VL
 namespace BackupSpc {
-static inline void EnableAccess() {
-    rccEnablePWRInterface(FALSE);
-    PWR->CR |= PWR_CR_DBP;
-}
-static inline void DisableAccess() {
-    PWR->CR &= ~PWR_CR_DBP;
-    rccDisablePWRInterface(FALSE);
-}
+    static inline void EnableAccess() {
+        rccEnablePWRInterface(FALSE);
+        rccEnableBKPSRAM(FALSE);
+        PWR->CR |= PWR_CR_DBP;
+    }
+    static inline void DisableAccess() { PWR->CR &= ~PWR_CR_DBP; }
 
-// RegN = 0...19
-static inline uint32_t ReadBackupRegister(uint32_t RegN) {
-    volatile uint32_t tmp = RTC_BASE + 0x50 + (RegN * 4);
-    return (*(volatile uint32_t *)tmp);
-}
+    static inline void Reset() {
+        RCC->BDCR |=  RCC_BDCR_BDRST;
+        RCC->BDCR &= ~RCC_BDCR_BDRST;
+    }
 
-static inline void WriteBackupRegister(uint32_t RegN, uint32_t Data) {
-    volatile uint32_t tmp = RTC_BASE + 0x50 + (RegN * 4);
-    *(volatile uint32_t *)tmp = Data;
-}
+    // RegN = 0...19
+    static inline uint32_t ReadBackupRegister(uint32_t RegN) {
+        volatile uint32_t tmp = RTC_BASE + 0x50 + (RegN * 4);
+        return (*(volatile uint32_t *)tmp);
+    }
+
+    static inline void WriteBackupRegister(uint32_t RegN, uint32_t Data) {
+        volatile uint32_t tmp = RTC_BASE + 0x50 + (RegN * 4);
+        *(volatile uint32_t *)tmp = Data;
+    }
 } // namespace
+#endif
 #endif
 
 #if 1 // ======================= Virtual Timer =================================
@@ -336,7 +341,7 @@ struct PwmSetup_t {
 
 // Set/clear
 static inline void PinSet    (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { PGpioPort->BSRRL = (uint32_t)(1<<APinNumber); }
-static inline void PinSetHi    (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { PGpioPort->BSRRL = (uint32_t)(1<<APinNumber); }
+static inline void PinSetHi  (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { PGpioPort->BSRRL = (uint32_t)(1<<APinNumber); }
 static inline void PinClear  (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { PGpioPort->BSRRH = (uint32_t)(1<<APinNumber); }
 static inline void PinSetLo  (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { PGpioPort->BSRRH = (uint32_t)(1<<APinNumber); }
 static inline void PinToggle (GPIO_TypeDef *PGpioPort, const uint16_t APinNumber) { PGpioPort->ODR  ^= (uint32_t)(1<<APinNumber); }
@@ -518,69 +523,101 @@ public:
 };
 #endif
 
-#if 1 // ==== External IRQ ====
+#if 1 // ========================== External IRQ ===============================
 enum ExtiTrigType_t {ttRising, ttFalling, ttRisingFalling};
-class IrqPin_t {
-private:
-    uint32_t IIrqChnl;
-    GPIO_TypeDef *IGPIO;
-    uint8_t IPinNumber;
+
+#if defined STM32L1XX || defined STM32F2XX || defined STM32F4XX || defined STM32L4XX
+#define PIN2IRQ_CHNL(Pin)   \
+    (((Pin) > 9)? EXTI15_10_IRQn : (((Pin) > 4)? EXTI9_5_IRQn : ((Pin) + EXTI0_IRQn)))
+#elif defined STM32F030 || defined STM32F0
+#define PIN2IRQ_CHNL(Pin)   \
+    (((Pin) > 3)? EXTI4_15_IRQn : (((Pin) > 1)? EXTI2_3_IRQn : EXTI0_1_IRQn))
+#endif
+
+/* Example:
+ const PinIrq_t GPinDrdy {ACC_DRDY_PIN};
+ GPinDrdy.Init(ttRising);
+*/
+class PinIrq_t {
 public:
-    void SetTriggerType(ExtiTrigType_t ATriggerType) {
-        uint32_t IrqMsk = 1 << IPinNumber;
+    GPIO_TypeDef *PGpio;
+    uint16_t PinN;
+    PinPullUpDown_t PullUpDown;
+    PinIrq_t(GPIO_TypeDef *APGpio, uint16_t APinN, PinPullUpDown_t APullUpDown) :
+        PGpio(APGpio), PinN(APinN), PullUpDown(APullUpDown) {}
+
+    void SetTriggerType(ExtiTrigType_t ATriggerType) const {
+        uint32_t IrqMsk = 1 << PinN;
         switch(ATriggerType) {
+#if defined STM32L4XX
             case ttRising:
-                EXTI->FTSR &= ~IrqMsk; // Falling trigger disabled
-                EXTI->RTSR |=  IrqMsk; // Rising trigger enabled
+                EXTI->RTSR1 |=  IrqMsk;  // Rising trigger enabled
+                EXTI->FTSR1 &= ~IrqMsk;  // Falling trigger disabled
                 break;
             case ttFalling:
-                EXTI->FTSR |=  IrqMsk; // Falling trigger enabled
-                EXTI->RTSR &= ~IrqMsk; // Rising trigger disabled
+                EXTI->RTSR1 &= ~IrqMsk;  // Rising trigger disabled
+                EXTI->FTSR1 |=  IrqMsk;  // Falling trigger enabled
                 break;
             case ttRisingFalling:
-                EXTI->FTSR |=  IrqMsk; // Falling trigger enabled
-                EXTI->RTSR |=  IrqMsk; // Rising trigger enabled
+                EXTI->RTSR1 |=  IrqMsk;  // Rising trigger enabled
+                EXTI->FTSR1 |=  IrqMsk;  // Falling trigger enabled
                 break;
+#else
+            case ttRising:
+                EXTI->RTSR |=  IrqMsk;  // Rising trigger enabled
+                EXTI->FTSR &= ~IrqMsk;  // Falling trigger disabled
+                break;
+            case ttFalling:
+                EXTI->RTSR &= ~IrqMsk;  // Rising trigger disabled
+                EXTI->FTSR |=  IrqMsk;  // Falling trigger enabled
+                break;
+            case ttRisingFalling:
+                EXTI->RTSR |=  IrqMsk;  // Rising trigger enabled
+                EXTI->FTSR |=  IrqMsk;  // Falling trigger enabled
+                break;
+#endif
         } // switch
     }
-    void Setup(GPIO_TypeDef *GPIO, const uint8_t APinNumber, ExtiTrigType_t ATriggerType) {
-        IGPIO = GPIO;
-        IPinNumber = APinNumber;
+
+    void Init(ExtiTrigType_t ATriggerType) const {
+        // Init pin as input
+        PinSetupInput(PGpio, PinN, PullUpDown);
         rccEnableAPB2(RCC_APB2ENR_SYSCFGEN, FALSE); // Enable sys cfg controller
         // Connect EXTI line to the pin of the port
-        uint8_t Indx   = APinNumber / 4;            // Indx of EXTICR register
-        uint8_t Offset = (APinNumber & 0x03) * 4;   // Offset in EXTICR register
+        uint8_t Indx   = PinN / 4;               // Indx of EXTICR register
+        uint8_t Offset = (PinN & 0x03) * 4;      // Offset in EXTICR register
         SYSCFG->EXTICR[Indx] &= ~((uint32_t)0b1111 << Offset);  // Clear port-related bits
         // GPIOA requires all zeroes => nothing to do in this case
-        if     (GPIO == GPIOB) SYSCFG->EXTICR[Indx] |= (uint32_t)0b0001 << Offset;
-        else if(GPIO == GPIOC) SYSCFG->EXTICR[Indx] |= (uint32_t)0b0010 << Offset;
-        else if(GPIO == GPIOD) SYSCFG->EXTICR[Indx] |= (uint32_t)0b0011 << Offset;
-        else if(GPIO == GPIOE) SYSCFG->EXTICR[Indx] |= (uint32_t)0b0100 << Offset;
+        if     (PGpio == GPIOB) SYSCFG->EXTICR[Indx] |= (uint32_t)0b0001 << Offset;
+        else if(PGpio == GPIOC) SYSCFG->EXTICR[Indx] |= (uint32_t)0b0010 << Offset;
         // Configure EXTI line
-        uint32_t IrqMsk = 1 << APinNumber;
+        uint32_t IrqMsk = 1 << PinN;
+#if defined STM32L4XX
+        EXTI->IMR1  |=  IrqMsk;      // Interrupt mode enabled
+        EXTI->EMR1  &= ~IrqMsk;      // Event mode disabled
+        SetTriggerType(ATriggerType);
+        EXTI->PR1    =  IrqMsk;      // Clean irq flag
+#else
         EXTI->IMR  |=  IrqMsk;      // Interrupt mode enabled
         EXTI->EMR  &= ~IrqMsk;      // Event mode disabled
         SetTriggerType(ATriggerType);
         EXTI->PR    =  IrqMsk;      // Clean irq flag
-        // Get IRQ channel
-        if     ((APinNumber >= 0)  and (APinNumber <= 4))  IIrqChnl = EXTI0_IRQn + APinNumber;
-        else if((APinNumber >= 5)  and (APinNumber <= 9))  IIrqChnl = EXTI9_5_IRQn;
-        else if((APinNumber >= 10) and (APinNumber <= 15)) IIrqChnl = EXTI15_10_IRQn;
-    }
-    // Enable/disable NVIC vector
-    void EnableIrqI(const uint32_t Priority) { nvicEnableVector(IIrqChnl, CORTEX_PRIORITY_MASK(Priority)); }
-    void EnableIrq(const uint32_t Priority)  {
-        chSysLock();
-        nvicEnableVector(IIrqChnl, CORTEX_PRIORITY_MASK(Priority));
-        chSysUnlock();
-    }
-    void DisableIrq() { nvicDisableVector(IIrqChnl); }
-    void GenerateIrq() { EXTI->SWIER |= 1 << IPinNumber; }
-    void CleanIrqFlag() { EXTI->PR = (1 << IPinNumber); }
-    // Standard pin functions
-    bool IsHi() { return PinIsSet(IGPIO, IPinNumber); }
-};
 #endif
+    }
+    void EnableIrq(const uint32_t Priority) const { nvicEnableVector(PIN2IRQ_CHNL(PinN), CORTEX_PRIORITY_MASK(Priority)); }
+    void DisableIrq() const { nvicDisableVector(PIN2IRQ_CHNL(PinN)); }
+#if defined STM32L4XX
+    void CleanIrqFlag() const { EXTI->PR1 = (1 << PinN); }
+    bool IsIrqPending() const { return BitIsSet(EXTI->PR1, (1 << PinN)); }
+    void GenerateIrq()  const { EXTI->SWIER1 = (1 << PinN); }
+#else
+    void CleanIrqFlag() const { EXTI->PR = (1 << PinN); }
+    bool IsIrqPending() const { return BitIsSet(EXTI->PR, (1 << PinN)); }
+    void GenerateIrq()  const { EXTI->SWIER = (1 << PinN); }
+#endif
+    bool IsHi() const { return PinIsHi(PGpio, PinN); }
+};
+#endif // EXTI
 
 // ================================= Random ====================================
 // Returns [0; TopValue]
@@ -637,7 +674,7 @@ public:
     void EnableDMAOnCapture(uint8_t CaptureReq) const { ITmr->DIER |= (1 << (CaptureReq + 8)); }
     void GenerateUpdateEvt()  const { ITmr->EGR = TIM_EGR_UG; }
     void EnableIrqOnUpdate()  const { ITmr->DIER |= TIM_DIER_UIE; }
-    void EnableIrq(uint32_t IrqChnl, uint32_t IrqPriority) const { nvicEnableVector(IrqChnl, IrqPriority); }
+    void EnableIrq(uint32_t IrqChnl, uint32_t IrqPriority) const { nvicEnableVector(IrqChnl, CORTEX_PRIORITY_MASK(IrqPriority)); }
     void ClearIrqPendingBit() const { ITmr->SR &= ~TIM_SR_UIF; }
 };
 #endif
@@ -700,7 +737,7 @@ public:
 #if 1 // ============================== Sleep ==================================
 namespace Sleep {
 static inline void EnterStandby() {
-#if defined STM32F2XX || defined STM32F0XX || defined STM32L4XX
+#if defined STM32F0XX || defined STM32L4XX || defined STM32F2XX
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 #else
     SCB->SCR |= SCB_SCR_SLEEPDEEP;
@@ -712,7 +749,9 @@ static inline void EnterStandby() {
     PWR->CR1 = tmp;
 #else
     PWR->CR = PWR_CR_PDDS;
+    // Command to clear WUF (wakeup flag) and wait two sys clock cycles to allow it be cleared
     PWR->CR |= PWR_CR_CWUF;
+    __NOP(); __NOP();
 #endif
     __WFI();
 }
@@ -859,4 +898,3 @@ public:
 };
 #endif
 
-#endif /* KL_LIB_F2XX_H_ */

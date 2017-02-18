@@ -1,6 +1,7 @@
 #include "sound.h"
 #include <string.h>
 #include "evt_mask.h"
+//#include "kl_lib.h"
 
 Sound_t Sound;
 Spi_t ISpi(VS_SPI);
@@ -194,7 +195,7 @@ void Sound_t::IPlayNew() {
 
 // ================================ Inner use ==================================
 void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
-    UartPrintfFunc();
+//    UartPrintfFunc();
     VsCmd_t FCmd;
     chSysLock();
     FCmd.OpCode = VS_WRITE_OPCODE;
@@ -205,12 +206,14 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
 
     // StartTransmissionIfNotBusy:
     if(IDmaIdle and IDreq.IsHi()) {
-        Uart.PrintfI("\rTXinB");
+//        Uart.PrintfI("\rTXinB");
         IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
+        Uart.PrintfNow("\r EnableIrq");
         IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
     }
+    Uart.PrintfNow("\r GenerateIrq OK");
     chSysUnlock();
-//    StartTransmissionIfNotBusy();
+    Uart.PrintfNow("\r return");
 }
 
 void Sound_t::ISendNextData() {

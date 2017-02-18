@@ -60,7 +60,8 @@ int main() {
     // Battery: ADC
     PinSetupAnalog(BattMeas_Pin);
     BattMeasureSW.Init();
-    BattMeasureSW.SetHi();
+//    BattMeasureSW.SetHi();
+    BattMeasureSW.SetLo(); // Connect R divider to GND
     Adc.Init();
     Adc.EnableVref();
 
@@ -258,8 +259,8 @@ void App_t::OnCmd(Shell_t *PShell) {
 
     else if(PCmd->NameIs("RUN_ADC")) {
 //        Adc.EnableVref();
-        BattMeasureSW.SetLo(); // Connect R divider to GND
-        chThdSleepMicroseconds(100);
+//        BattMeasureSW.SetLo(); // Connect R divider to GND
+//        chThdSleepMicroseconds(100);
         Adc.StartMeasurement();
     }
 
