@@ -8,7 +8,7 @@
 #pragma once
 
 #include "hal.h"
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 #include "kl_buf.h"
 
 #include "SimpleSensors.h"

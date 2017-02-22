@@ -10,8 +10,8 @@
 
 #include "kl_sd.h"
 #include <stdint.h>
-#include "kl_lib_f2xx.h"
 #include "uart.h"
+#include "kl_lib.h"
 
 // ==== Defines ====
 #define VS_GPIO         GPIOB
@@ -111,11 +111,13 @@ struct VsBuf_t {
 #define VS_EVT_DREQ_IRQ     (eventmask_t)16
 
 extern PinIrq_t IDreq;
+extern  Spi_t ISpi;
 
 class Sound_t {
 private:
-    Spi_t ISpi;
+//    Spi_t ISpi;
     msg_t CmdBuf[VS_CMD_BUF_SZ];
+//    mailbox_t CmdBox;
     Mailbox CmdBox;
     VsCmd_t ICmd;
     VsBuf_t Buf1, Buf2, *PBuf;
@@ -125,14 +127,14 @@ private:
     int16_t IAttenuation;
     const char* IFilename;
     uint32_t IStartPosition;
-    Thread *IPAppThd;
+    thread_t *IPAppThd;
     // Pin operations
-    inline void Rst_Lo()   { PinClear(VS_GPIO, VS_RST); }
-    inline void Rst_Hi()   { PinSet(VS_GPIO, VS_RST); }
-    inline void XCS_Lo()   { PinClear(VS_GPIO, VS_XCS); Loop(180); }
-    inline void XCS_Hi()   { PinSet(VS_GPIO, VS_XCS);  }
-    inline void XDCS_Lo()  { PinClear(VS_GPIO, VS_XDCS); Loop(360); }
-    inline void XDCS_Hi()  { PinSet(VS_GPIO, VS_XDCS); }
+    inline void Rst_Lo()   { PinSetLo(VS_GPIO, VS_RST); }
+    inline void Rst_Hi()   { PinSetHi(VS_GPIO, VS_RST); }
+    inline void XCS_Lo()   { PinSetLo(VS_GPIO, VS_XCS); DelayLoop(180); }
+    inline void XCS_Hi()   { PinSetHi(VS_GPIO, VS_XCS);  }
+    inline void XDCS_Lo()  { PinSetLo(VS_GPIO, VS_XDCS); DelayLoop(360); }
+    inline void XDCS_Hi()  { PinSetHi(VS_GPIO, VS_XDCS); }
     // Cmds
     uint8_t CmdRead(uint8_t AAddr, uint16_t *AData);
     uint8_t CmdWrite(uint8_t AAddr, uint16_t AData);
@@ -192,15 +194,15 @@ public:
         if(IAttenuation > 0x8F) IAttenuation = 0x8F;
         AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
     }
-    void RegisterAppThd(Thread *PThd) { IPAppThd = PThd; }
+    void RegisterAppThd(thread_t *PThd) { IPAppThd = PThd; }
 
     uint32_t GetPosition() { return IFile.fptr; }
 #if VS_AMPF_EXISTS
-    void AmpfOn()  { PinSet(VS_AMPF_GPIO, VS_AMPF_PIN); }
-    void AmpfOff() { PinClear(VS_AMPF_GPIO, VS_AMPF_PIN); }
+    void AmpfOn()  { PinSetHi(VS_AMPF_GPIO, VS_AMPF_PIN); }
+    void AmpfOff() { PinSetLo(VS_AMPF_GPIO, VS_AMPF_PIN); }
 #endif
     // Inner use
-    Thread *PThread;
+    thread_t *PThread;
     void IrqDreqHandler();
     void ITask();
     void ISendNextData();

@@ -27,7 +27,7 @@
 #include "ch.h"
 #include "hal.h"
 
-#include "clocking.h"
+#include "kl_lib.h"
 
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
@@ -104,7 +104,11 @@ void hal_lld_init(void) {
   rccResetAPB2(~0);
 
   /* SysTick initialization using the system clock.*/
-  Clk.InitSysTick();
+  __disable_irq();
+  SysTick->LOAD = Clk.AHBFreqHz / CH_FREQUENCY - 1;
+  SysTick->VAL = 0;
+  SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk;
+  __enable_irq();
 
   /* DWT cycle counter enable.*/
   SCS_DEMCR |= SCS_DEMCR_TRCENA;

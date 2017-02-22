@@ -10,7 +10,7 @@
 
 #include "board.h"
 #include "uart.h"
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 
 //const uint8_t FullStepOperation[] = {
 //        0b1010,

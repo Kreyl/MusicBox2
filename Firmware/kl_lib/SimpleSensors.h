@@ -12,7 +12,7 @@
  */
 
 #include "hal.h"
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 
 enum PinSnsState_t {pssNone, pssLo, pssHi, pssRising, pssFalling};
 typedef void (*ftVoidPSnsStLen)(PinSnsState_t *PState, uint32_t Len);

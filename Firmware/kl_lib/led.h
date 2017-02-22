@@ -11,7 +11,7 @@
 #include "color.h"
 #include "ChunkTypes.h"
 #include "uart.h"
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 
 #if 0 // ========================= Single LED blinker ==========================
 #define LED_RGB_BLINKER

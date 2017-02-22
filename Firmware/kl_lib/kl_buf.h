@@ -10,7 +10,7 @@
 
 #include "ch.h"
 #include "string.h" // for memcpy
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 
 // Simple buffer
 struct Buf_t {

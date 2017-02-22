@@ -10,7 +10,7 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 #include "uart.h"
 #include "evt_mask.h"
 #include "kl_sd.h"
@@ -56,12 +56,12 @@ private:
 public:
     void InitSwich(){
         PinSetupOut(PeriphySW_Pin, PeriphySW_PinMode);
-        PinSet(PeriphySW_Pin);
+        PinSetHi(PeriphySW_Pin);
         PinSetupOut(PeriphyPWSW_Pin, PeriphySW_PinMode);
-        PinSet(PeriphyPWSW_Pin);
+        PinSetHi(PeriphyPWSW_Pin);
     }
-    void ON() { PinClear(PeriphySW_Pin); PinClear(PeriphyPWSW_Pin); }
-    void OFF() { PinSet(PeriphySW_Pin); PinSet(PeriphyPWSW_Pin); }
+    void ON() { PinSetLo(PeriphySW_Pin); PinSetLo(PeriphyPWSW_Pin); }
+    void OFF() { PinSetHi(PeriphySW_Pin); PinSetHi(PeriphyPWSW_Pin); }
 //    bool _5V_is_here() { return PinIsSet(GPIOA, 9); }//GPIOA, 9, pudPullDown    ExternalPWR_Pin
 };
 extern Periphy_t Periphy;

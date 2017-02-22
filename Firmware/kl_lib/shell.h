@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cstring>
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 
 #define CMD_BUF_SZ		99
 #define DELIMITERS      " ,"

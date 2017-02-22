@@ -12,6 +12,7 @@
 #include "core_cmInstr.h"
 #include <cstdlib>
 #include <sys/cdefs.h>
+#include "board.h"
 
 /*
 Build time:
@@ -282,7 +283,6 @@ static inline bool TimeElapsed(systime_t *PSince, uint32_t Delay_ms) {
 //    volatile uint32_t __ticks = (Clk.AHBFreqHz / 4000) * Ams;
 //    DelayLoop(__ticks);
 //}
-
 static inline void DelayLoop(uint32_t N) {
     for(volatile uint32_t i=0; i<N; i++);
 }

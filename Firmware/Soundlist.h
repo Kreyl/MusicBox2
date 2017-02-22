@@ -8,7 +8,7 @@
 #ifndef SRC_SOUNDLIST_H_
 #define SRC_SOUNDLIST_H_
 
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 #include "kl_sd.h"
 
 

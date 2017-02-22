@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 #include "board.h"
 
 #if ADC_REQUIRED

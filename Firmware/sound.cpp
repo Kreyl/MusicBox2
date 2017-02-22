@@ -1,9 +1,10 @@
-#include "sound.h"
+
 #include <string.h>
 #include "evt_mask.h"
-#include "clocking.h"
+#include "sound.h"
 
 Sound_t Sound;
+Spi_t ISpi(VS_SPI);
 PinIrq_t IDreq(VS_GPIO, VS_DREQ, pudPullDown);
 
 // Mode register
@@ -35,7 +36,7 @@ void SIrqDmaHandler(void *p, uint32_t flags) {
 } // extern c
 
 // =========================== Implementation ==================================
-static WORKING_AREA(waSoundThread, 512);
+static THD_WORKING_AREA(waSoundThread, 512);
 __attribute__((noreturn))
 static void SoundThread(void *arg) {
     chRegSetThreadName("Sound");
@@ -48,8 +49,8 @@ void Sound_t::ITask() {
         eventmask_t EvtMsk = chEvtWaitAny(ALL_EVENTS);
 #if 1 // ==== DMA done ====
         if(EvtMsk & VS_EVT_DMA_DONE) {
-            ISpi.WaitBsyLo();                   // Wait SPI transaction end
-            if(Clk.AHBFreqHz > 12000000) Loop(450); // Make a solemn pause
+            ISpi.WaitBsyHi2Lo();                // Wait SPI transaction end
+            if(Clk.AHBFreqHz > 12000000) DelayLoop(450); // Make a solemn pause
             XCS_Hi();                           // }
             XDCS_Hi();                          // } Stop SPI
             // Send next data if VS is ready
@@ -111,7 +112,7 @@ void Sound_t::Init() {
     PinSetupAlterFunc(VS_GPIO, VS_SI,   omPushPull, pudNone, VS_AF);
 
     // ==== SPI init ====
-    ISpi.Setup(VS_SPI, boMSB, cpolIdleLow, cphaFirstEdge, sbFdiv8);
+    ISpi.Setup(boMSB, cpolIdleLow, cphaFirstEdge, sbFdiv8);
     ISpi.Enable();
     ISpi.EnableTxDma();
 
@@ -198,7 +199,6 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
     FCmd.Address = AAddr;
     FCmd.Data = __REV16(AData);
     // Add cmd to queue
-//    chMBPost(&CmdBox, FCmd.Msg, TIME_INFINITE);
     chMBPostI(&CmdBox, FCmd.Msg);
 
     // StartTransmissionIfNotBusy:
@@ -208,7 +208,6 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
         IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
     }
     chSysUnlock();
-//    StartTransmissionIfNotBusy();
 }
 
 void Sound_t::ISendNextData() {

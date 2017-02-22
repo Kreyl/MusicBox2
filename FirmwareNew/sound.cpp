@@ -1,7 +1,7 @@
-#include "sound.h"
+
 #include <string.h>
 #include "evt_mask.h"
-//#include "kl_lib.h"
+#include "sound.h"
 
 Sound_t Sound;
 Spi_t ISpi(VS_SPI);
@@ -21,7 +21,6 @@ extern "C" {
 CH_IRQ_HANDLER(VS_IRQ_HANDLER) {
     CH_IRQ_PROLOGUE();
     chSysLockFromISR();
-    Uart.PrintfI("Irq\r");
     IDreq.CleanIrqFlag();
     IDreq.DisableIrq();
     chEvtSignalI(Sound.PThread, VS_EVT_DREQ_IRQ);
@@ -38,19 +37,19 @@ void SIrqDmaHandler(void *p, uint32_t flags) {
 
 // =========================== Implementation ==================================
 static THD_WORKING_AREA(waSoundThread, 512);
-__noreturn
+__attribute__((noreturn))
 static void SoundThread(void *arg) {
     chRegSetThreadName("Sound");
     Sound.ITask();
 }
 
-__noreturn
+__attribute__((noreturn))
 void Sound_t::ITask() {
     while(true) {
         eventmask_t EvtMsk = chEvtWaitAny(ALL_EVENTS);
 #if 1 // ==== DMA done ====
         if(EvtMsk & VS_EVT_DMA_DONE) {
-            ISpi.WaitBsyHi2Lo();                   // Wait SPI transaction end
+            ISpi.WaitBsyHi2Lo();                // Wait SPI transaction end
             if(Clk.AHBFreqHz > 12000000) DelayLoop(450); // Make a solemn pause
             XCS_Hi();                           // }
             XDCS_Hi();                          // } Stop SPI
@@ -61,7 +60,6 @@ void Sound_t::ITask() {
 #endif
 
         if(EvtMsk & VS_EVT_DREQ_IRQ) {
-            Uart.Printf("VS_EVT_DREQ_IRQ\r");
             chThdSleepMilliseconds(1);  // Make a pause after IRQ rise
             ISendNextData();
         }
@@ -206,12 +204,12 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
 
     // StartTransmissionIfNotBusy:
     if(IDmaIdle and IDreq.IsHi()) {
-//        Uart.PrintfI("\rTXinB");
+//            Uart.PrintfI("\rTXinB");
         IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
         Uart.PrintfNow("\r EnableIrq");
         IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
+        Uart.PrintfNow("\r GenerateIrq OK");
     }
-    Uart.PrintfNow("\r GenerateIrq OK");
     chSysUnlock();
     Uart.PrintfNow("\r return");
 }

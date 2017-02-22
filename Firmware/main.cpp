@@ -95,7 +95,7 @@ void App_t::PowerON() {
 
     if(Sleep::WasInStandby()) {
         Uart.Printf("\rWasStandby"); // WakeUp
-        Sleep::DisableWakeup1Pin();
+        Sleep::DisableWakeupPin();
         Sleep::ClearStandbyFlag();
         SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
         Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
@@ -185,7 +185,6 @@ while(true) {
         Backlight.SetBrightness(0);
         chSysLock();
         Clk.SetFreq48Mhz();
-        Clk.InitSysTick();
         chSysUnlock();
         Usb.Init();
         chThdSleepMilliseconds(540);
@@ -197,7 +196,6 @@ while(true) {
         MassStorage.Reset();
         chSysLock();
         Clk.SetFreq12Mhz();
-        Clk.InitSysTick();
         chSysUnlock();
         Uart.Printf("\rUsb Off");
         if (!Box1Opened.IsHi() and !Box2Opened.IsHi())
@@ -284,7 +282,7 @@ void App_t::ShutDown() {
         BackupSpc::EnableAccess();
         BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber());
         BackupSpc::WriteBackupRegister(VolumeBKP, Sound.GetVolume());
-        Sleep::EnableWakeup1Pin();
+        Sleep::EnableWakeupPin();
         Sleep::EnterStandby();
         chSysUnlock();
     }

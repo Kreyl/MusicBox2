@@ -104,6 +104,8 @@
  */
 #define CORTEX_PRIORITY_MASK(n)                                             \
   ((n) << (8 - CORTEX_PRIORITY_BITS))
+#define CORTEX_PRIO_MASK(n)                                             \
+  ((n) << (8 - CORTEX_PRIORITY_BITS))
 
 /*===========================================================================*/
 /* Port configurable parameters (common).                                    */

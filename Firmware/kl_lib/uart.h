@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 #include "kl_sprintf.h"
 #include <cstring>
 #include "shell.h"

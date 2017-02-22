@@ -10,8 +10,8 @@
 
 #include "kl_sd.h"
 #include <stdint.h>
-#include "kl_lib.h"
 #include "uart.h"
+#include "kl_lib.h"
 
 // ==== Defines ====
 #define VS_GPIO         GPIOB
@@ -73,7 +73,6 @@
 #define VS_REG_AIADDR       0x0A
 #define VS_REG_VOL          0x0B
 
-
 enum sndState_t {sndStopped, sndPlaying, sndWritingZeroes};
 
 union VsCmd_t {
@@ -84,7 +83,6 @@ union VsCmd_t {
     } __packed;
     msg_t Msg;
 };
-
 
 #define VS_VOLUME_STEP          4
 #define VS_VOLUME_STEP_BIG      10
@@ -112,12 +110,12 @@ struct VsBuf_t {
 #define VS_EVT_DMA_DONE     (eventmask_t)8
 #define VS_EVT_DREQ_IRQ     (eventmask_t)16
 
-
 extern PinIrq_t IDreq;
 extern  Spi_t ISpi;
 
 class Sound_t {
 private:
+//    Spi_t ISpi;
     msg_t CmdBuf[VS_CMD_BUF_SZ];
     mailbox_t CmdBox;
     VsCmd_t ICmd;
@@ -176,17 +174,16 @@ public:
         return 0xFE - IAttenuation;
     }
     void VolumeIncrease() {
-        Uart.Printf(" %S\r", __FUNCTION__);
         IAttenuation -= VS_VOLUME_STEP;
         if(IAttenuation < 0) IAttenuation = 0;
         AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
     }
     void VolumeDecrease() {
-        UartPrintfFunc();
-//        IAttenuation += VS_VOLUME_STEP;
-//        if(IAttenuation > 0x8F) IAttenuation = 0x8F;
-//        AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
-    }    void VolumeIncreaseBig() {
+        IAttenuation += VS_VOLUME_STEP;
+        if(IAttenuation > 0x8F) IAttenuation = 0x8F;
+        AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
+    }
+    void VolumeIncreaseBig() {
         IAttenuation -= VS_VOLUME_STEP_BIG;
         if(IAttenuation < 0) IAttenuation = 0;
         AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));

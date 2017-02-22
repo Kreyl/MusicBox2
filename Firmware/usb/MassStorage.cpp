@@ -12,6 +12,7 @@
 #include "sdc_lld.h"
 #include "evt_mask.h"
 #include "diskio.h"
+#include "kl_lib.h"
 
 MassStorage_t MassStorage;
 static uint8_t SByte;
@@ -137,7 +138,7 @@ void MassStorage_t::SCSICmdHandler() {
 
 bool MassStorage_t::CmdInquiry() {
 //    Uart.Printf("CmdInquiry\r");
-    uint16_t RequestedLength = BuildUint16(CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3]);
+    uint16_t RequestedLength = Convert::BuildUint16(CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3]);
     uint16_t BytesToTransfer;
     if(CmdBlock.SCSICmdData[1] & 0x01) {
         BytesToTransfer = MIN(RequestedLength, PAGE0_INQUIRY_DATA_SZ);
@@ -200,8 +201,8 @@ bool MassStorage_t::CmdReadFormatCapacities() {
 }
 
 bool MassStorage_t::ReadWriteCommon(uint32_t *PAddr, uint16_t *PLen) {
-    *PAddr = BuildUint32(CmdBlock.SCSICmdData[5], CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3], CmdBlock.SCSICmdData[2]);
-    *PLen  = BuildUint16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
+    *PAddr = Convert::BuildUint32(CmdBlock.SCSICmdData[5], CmdBlock.SCSICmdData[4], CmdBlock.SCSICmdData[3], CmdBlock.SCSICmdData[2]);
+    *PLen  = Convert::BuildUint16(CmdBlock.SCSICmdData[8], CmdBlock.SCSICmdData[7]);
 //    Uart.Printf("Addr=%u; Len=%u\r", *PAddr, *PLen);
     // Check block addr
     if((*PAddr + *PLen) > SDCD1.capacity) {

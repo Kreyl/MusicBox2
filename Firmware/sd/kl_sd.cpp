@@ -10,7 +10,7 @@
 #include "sdc_lld.h"
 #include <string.h>
 #include <stdlib.h>
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 
 sd_t SD;
 extern Semaphore semSDRW;
@@ -21,12 +21,12 @@ void sd_t::Init() {
     iniFile.PFile = &File;
 #endif
     // Bus pins
-    PinSetupAlterFunc(GPIOC,  8, omPushPull, pudPullUp, AF12, ps50MHz); // DAT0
-    PinSetupAlterFunc(GPIOC,  9, omPushPull, pudPullUp, AF12, ps50MHz); // DAT1
-    PinSetupAlterFunc(GPIOC, 10, omPushPull, pudPullUp, AF12, ps50MHz); // DAT2
-    PinSetupAlterFunc(GPIOC, 11, omPushPull, pudPullUp, AF12, ps50MHz); // DAT3
-    PinSetupAlterFunc(GPIOC, 12, omPushPull, pudNone,   AF12, ps50MHz); // CLK
-    PinSetupAlterFunc(GPIOD,  2, omPushPull, pudPullUp, AF12, ps50MHz); // CMD
+    PinSetupAlterFunc(GPIOC,  8, omPushPull, pudPullUp, AF12, psFast); // DAT0
+    PinSetupAlterFunc(GPIOC,  9, omPushPull, pudPullUp, AF12, psFast); // DAT1
+    PinSetupAlterFunc(GPIOC, 10, omPushPull, pudPullUp, AF12, psFast); // DAT2
+    PinSetupAlterFunc(GPIOC, 11, omPushPull, pudPullUp, AF12, psFast); // DAT3
+    PinSetupAlterFunc(GPIOC, 12, omPushPull, pudNone,   AF12, psFast); // CLK
+    PinSetupAlterFunc(GPIOD,  2, omPushPull, pudPullUp, AF12, psFast); // CMD
     // Power pin
 //    PinSetupOut(GPIOC, 4, omPushPull, pudNone);
 //    PinClear(GPIOC, 4); // Power on

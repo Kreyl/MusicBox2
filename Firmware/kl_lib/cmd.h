@@ -9,7 +9,7 @@
 #define CMD_H_
 
 #include "hal.h"
-#include "kl_lib_f2xx.h"
+#include "kl_lib.h"
 #include <cstring>
 
 #define DELIMITERS      " ,"
