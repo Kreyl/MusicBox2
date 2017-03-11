@@ -26,7 +26,7 @@ PinInput_t Box1Opened(Sensor1_Pin);
 PinInput_t Box2Opened(Sensor2_Pin);
 PinOutput_t BattMeasureSW(BattMeasSW_Pin);
 SteppingMotor_t Motor(MotorPins, MotorSHDN, MotorAngle, MotorRatio);
-LedSmooth_t Backlight(LED_PIN);
+//LedSmooth_t Backlight(LED_PIN);
 
 
 // =============================== Main ========================================
@@ -89,9 +89,9 @@ void App_t::PowerON() {
     Motor.Init(pdNoDelay);
     Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
     // LED
-    Backlight.Init();
+//    Backlight.Init();
 //    Backlight.SetBrightness(0);
-    Backlight.SetPwmFrequencyHz(1000);
+//    Backlight.SetPwmFrequencyHz(1000);
 
     if(Sleep::WasInStandby()) {
         Uart.Printf("\rWasStandby"); // WakeUp
@@ -109,7 +109,7 @@ void App_t::PowerON() {
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
         SndList.PlayRandomFileFromDir("0:\\");
         Motor.Start();
-        Backlight.StartOrContinue(lsqFadeIn);
+//        Backlight.StartOrContinue(lsqFadeIn);
     }
     else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
     else ShutDown();
@@ -182,7 +182,7 @@ while(true) {
     if(EvtMsk & EVT_USB_CONNECTED) {
         Sound.Stop();
         Motor.Stop();
-        Backlight.SetBrightness(0);
+//        Backlight.SetBrightness(0);
         chSysLock();
         Clk.SetFreq48Mhz();
         chSysUnlock();
@@ -204,7 +204,7 @@ while(true) {
             //        SD.Init();
             SndList.PlayRandomFileFromDir("0:\\");
             Motor.Start();
-            Backlight.StartOrContinue(lsqFadeIn);
+//            Backlight.StartOrContinue(lsqFadeIn);
         }
     }
 
@@ -276,7 +276,7 @@ void App_t::ShutDown() {
         chSysLock();
         Uart.PrintfNow("\rShutDown");
         Sound.Shutdown();
-        Backlight.SetBrightness(0);
+//        Backlight.SetBrightness(0);
 //        Motor.Sleep();
         Periphy.OFF();
         BackupSpc::EnableAccess();

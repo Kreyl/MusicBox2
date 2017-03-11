@@ -23,6 +23,7 @@ CH_IRQ_HANDLER(VS_IRQ_HANDLER) {
     chSysLockFromISR();
     IDreq.CleanIrqFlag();
     IDreq.DisableIrq();
+    Uart.PrintfI("\r IRQ");
     chEvtSignalI(Sound.PThread, VS_EVT_DREQ_IRQ);
     chSysUnlockFromISR();
     CH_IRQ_EPILOGUE();
@@ -208,6 +209,7 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
         IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
         Uart.PrintfNow("\r EnableIrq");
         IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
+//        chEvtSignalI(Sound.PThread, VS_EVT_DREQ_IRQ);
         Uart.PrintfNow("\r GenerateIrq OK");
     }
     chSysUnlock();
@@ -215,20 +217,20 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
 }
 
 void Sound_t::ISendNextData() {
-//    Uart.Printf("\rSN");
+    Uart.PrintfNow("\rSN");
     dmaStreamDisable(VS_DMA);
     IDmaIdle = false;
     // ==== If command queue is not empty, send command ====
     msg_t msg = chMBFetch(&CmdBox, &ICmd.Msg, TIME_IMMEDIATE);
     if(msg == MSG_OK) {
-//        Uart.PrintfI("\rvCmd: %A", &ICmd, 4, ' ');
+        Uart.PrintfI("\rvCmd: %A", &ICmd, 4, ' ');
         XCS_Lo();   // Start Cmd transmission
         dmaStreamSetMemory0(VS_DMA, &ICmd);
         dmaStreamSetTransactionSize(VS_DMA, sizeof(VsCmd_t));
         dmaStreamSetMode(VS_DMA, VS_DMA_MODE | STM32_DMA_CR_MINC);  // Memory pointer increase
-        dmaStreamEnable(VS_DMA);
+//        dmaStreamEnable(VS_DMA);
     }
-    // ==== Send next chunk of data if any ====
+//    // ==== Send next chunk of data if any ====
     else switch(State) {
         case sndPlaying: {
 //            Uart.PrintfI("\rD");

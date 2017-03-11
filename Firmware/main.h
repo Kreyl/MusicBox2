@@ -20,7 +20,6 @@
 #include "battery_consts.h"
 #include "board.h"
 
-
 //enum AppState_t  {
 //    asDefault,
 //};

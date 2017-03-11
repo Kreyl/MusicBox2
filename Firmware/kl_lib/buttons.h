@@ -39,7 +39,7 @@ if(Evt & EVT_BUTTONS) {
 #define BTN_COMBO                   FALSE   // Allow combo
 #define BTN_GETSTATE_REQUIRED       FALSE
 
-#define BTN_REPEAT_PERIOD_MS        900
+#define BTN_REPEAT_PERIOD_MS        650
 #define BTN_LONGPRESS_DELAY_MS      1000
 #define BTN_DELAY_BEFORE_REPEAT_MS  (BTN_REPEAT_PERIOD_MS + BTN_LONGPRESS_DELAY_MS)
 
