@@ -103,7 +103,9 @@ void App_t::PowerON() {
         Uart.Printf("PowerON\r");
         Sound.SetVolume(DEF_VolLevel);
     }
+
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
+        Uart.Printf("Here!\r");
         SndList.PlayRandomFileFromDir("0:\\");
         Motor.Start();
 //        Backlight.StartOrContinue(lsqFadeIn);
@@ -177,6 +179,7 @@ while(true) {
     }
 
  // ==== USB connected/disconnected ====
+    /*
     if(EvtMsk & EVT_USB_CONNECTED) {
 //        Sound.Stop();
         Motor.Stop();
@@ -205,6 +208,7 @@ while(true) {
 //            Backlight.StartOrContinue(lsqFadeIn);
         }
     }
+    */
 
     if(EvtMsk & EVT_UART_NEW_CMD) {
         OnCmd(&Uart);

@@ -95,6 +95,7 @@
 #include "ff.h"			/* FatFs configurations and declarations */
 #include "diskio.h"		/* Declarations of low level disk I/O functions */
 
+extern void PrintfC(const char *format, ...);
 
 /*--------------------------------------------------------------------------
 
@@ -2065,6 +2066,9 @@ FRESULT chk_mounted (	/* FR_OK(0): successful, !=0: any error occurred */
 	/* Search FAT partition on the drive. Supports only generic partitionings, FDISK and SFD. */
 	fmt = check_fs(fs, bsect = 0);		/* Load sector 0 and check if it is an FAT-VBR (in SFD) */
 	if (LD2PT(vol) && !fmt) fmt = 1;	/* Force non-SFD if the volume is forced partition */
+
+	PrintfC("fmt: %u\r", fmt);
+
 	if (fmt == 1) {						/* Not an FAT-VBR, the physical drive can be partitioned */
 		/* Check the partition listed in the partition table */
 		pi = LD2PT(vol);
@@ -2966,6 +2970,7 @@ FRESULT f_opendir (
 
 
 	res = chk_mounted(&path, &dj->fs, 0);
+	PrintfC("chk_mounted: %u\r", res);
 	if (res == FR_OK) {
 		INIT_BUF(*dj);
 		res = follow_path(dj, path);			/* Follow the path to the directory */

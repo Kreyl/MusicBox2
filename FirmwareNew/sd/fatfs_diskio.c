@@ -43,11 +43,13 @@ extern RTCDriver RTCD1;
 binary_semaphore_t semSDRW;
 
 bool SDRead(uint32_t startblk, uint8_t *buffer, uint32_t n) {
-//    PrintfC("\r*%S ", chThdSelf()->p_name);
+    PrintfC("%S\r", chThdGetSelfX()->p_name);
     msg_t msg = chBSemWaitTimeout(&semSDRW, MS2ST(3600));
     if(msg == MSG_OK) {
 //        PrintfC(" +%S ", chThdSelf()->p_name);
+        PrintfC("%u %u\r", startblk, n);
         bool rslt = sdcRead(&SDCD1, startblk, buffer, n);
+        PrintfC("read: %u\r", rslt);
         chBSemSignal(&semSDRW);
 //        PrintfC(" =%S ", chThdSelf()->p_name);
         return rslt;

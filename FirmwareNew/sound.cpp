@@ -19,14 +19,12 @@ static uint8_t ReadWriteByte(uint8_t AByte);
 extern "C" {
 // Dreq IRQ
 CH_IRQ_HANDLER(VS_IRQ_HANDLER) {
-    Uart.PrintfNow("IRQ %d %d\r", ch.dbg.isr_cnt, ch.dbg.lock_cnt);
+//    Uart.PrintfNow("IRQ %d %d\r", ch.dbg.isr_cnt, ch.dbg.lock_cnt);
     CH_IRQ_PROLOGUE();
-    Uart.PrintfNow("IRQ %d %d\r", ch.dbg.isr_cnt, ch.dbg.lock_cnt);
     chSysLockFromISR();
     IDreq.CleanIrqFlag();
     IDreq.DisableIrq();
-
-//    chEvtSignalI(Sound.PThread, VS_EVT_DREQ_IRQ);
+    chEvtSignalI(Sound.PThread, VS_EVT_DREQ_IRQ);
     chSysUnlockFromISR();
     CH_IRQ_EPILOGUE();
 }
@@ -210,22 +208,22 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
 //            Uart.PrintfI("\rTXinB");
         IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
 //        Uart.PrintfNow("%X %X %X %X\r", SYSCFG->EXTICR[0], SYSCFG->EXTICR[1], SYSCFG->EXTICR[2], SYSCFG->EXTICR[3]);
-        Uart.PrintfNow("EnableIrq\r");
+//        Uart.PrintfNow("EnableIrq\r");
         IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
-        Uart.PrintfNow("GenerateIrq OK\r");
+//        Uart.PrintfNow("GenerateIrq OK\r");
     }
     chSysUnlock();
-    Uart.PrintfNow("\r return");
+//    Uart.PrintfNow("\r return");
 }
 
 void Sound_t::ISendNextData() {
-    Uart.PrintfNow("\rSN");
+//    Uart.PrintfNow("\rSN");
     dmaStreamDisable(VS_DMA);
     IDmaIdle = false;
     // ==== If command queue is not empty, send command ====
     msg_t msg = chMBFetch(&CmdBox, &ICmd.Msg, TIME_IMMEDIATE);
     if(msg == MSG_OK) {
-        Uart.PrintfI("\rvCmd: %A", &ICmd, 4, ' ');
+//        Uart.PrintfI("\rvCmd: %A", &ICmd, 4, ' ');
         XCS_Lo();   // Start Cmd transmission
         dmaStreamSetMemory0(VS_DMA, &ICmd);
         dmaStreamSetTransactionSize(VS_DMA, sizeof(VsCmd_t));

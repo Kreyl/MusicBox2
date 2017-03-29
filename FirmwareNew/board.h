@@ -121,7 +121,7 @@
 #endif
 
 #if 1 // =========================== DMA =======================================
-//#define STM32_DMA_REQUIRED  TRUE
+#define STM32_DMA_REQUIRED  TRUE
 // ==== Uart ====
 // Remap is made automatically if required
 #define UART_DMA_TX     STM32_DMA1_STREAM6

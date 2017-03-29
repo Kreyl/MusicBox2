@@ -120,7 +120,7 @@ static bool mode_detect(SDCDriver *sdcp) {
     }
     else {
       sdcp->cardmode = SDC_MODE_CARDTYPE_SDV11;
-    
+
       /* Reset error flag illegal command.*/
       sdc_lld_send_cmd_none(sdcp, MMCSD_CMD_GO_IDLE_STATE, 0);
     }

@@ -916,7 +916,7 @@ public:
         EXTI->PR    =  IrqMsk;      // Clean irq flag
 #endif
     }
-    void EnableIrq(const uint32_t Priority) const { nvicEnableVector(PIN2IRQ_CHNL(PinN), CORTEX_PRIO_MASK(Priority)); }
+    void EnableIrq(const uint32_t Priority) const { nvicEnableVector(PIN2IRQ_CHNL(PinN), Priority); }
     void DisableIrq() const { nvicDisableVector(PIN2IRQ_CHNL(PinN)); }
 #if defined STM32L4XX
     void CleanIrqFlag() const { EXTI->PR1 = (1 << PinN); }

@@ -11,6 +11,7 @@
 
 FRESULT SndList_t::CountFilesInDir(const char* DirName, uint32_t *PCnt) {
     FRESULT Rslt = f_opendir(&Dir, DirName);
+    Uart.Printf("R=%u\r", Rslt);
     if(Rslt != FR_OK) return Rslt;
     *PCnt = 0;
     while(true) {
@@ -35,8 +36,8 @@ FRESULT SndList_t::CountFilesInDir(const char* DirName, uint32_t *PCnt) {
 void SndList_t::PlayRandomFileFromDir(const char* DirName) {
     uint32_t Cnt=0;
     FRESULT Rslt = CountFilesInDir(DirName, &Cnt);
+    Uart.Printf("R=%u; Cnt=%u\r", Rslt, Cnt);
     if(Rslt != FR_OK or Cnt == 0) return;       // Get out if nothing to play
-//    Uart.Printf("\rR=%u; Cnt=%u", Rslt, Cnt);
     // Select number of file
     uint32_t Number = 0;
     if (Cnt == 2 and PreviousN == 0) Number = 1;
