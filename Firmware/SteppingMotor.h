@@ -83,13 +83,13 @@ public:
     }
     void SetSpeed(int32_t Speed, const StepMode_t Mode);
     int32_t GetSpeed() {
-        int32_t Result;
+        int32_t Result = 0;
         switch(MotorMode) {
             case smFullStep:
-                Result = (1000*60*StepAngle*5)/(360 * GearRatio * StepInterval);
+                Result = (uint32_t)(1000*60*StepAngle*10)/(360 * GearRatio * StepInterval);
                 break;
             case smHalftep:
-                Result = (1000*60*StepAngle*10)/(360 * GearRatio * StepInterval);
+                Result = (uint32_t)(1000*60*StepAngle*5)/(360 * GearRatio * StepInterval);
                 break;
             default: break;
         }

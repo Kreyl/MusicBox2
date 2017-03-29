@@ -158,6 +158,15 @@ while(true) {
                     case VolDownIndex: Sound.VolumeDecreaseBig(); break;
                 }
             }
+            else if(EInfo.Type == beLongPress) {
+                int32_t Speed = Motor.GetSpeed();
+                switch(EInfo.BtnID) {
+                    case VolUpIndex:   Speed = Speed-50; break;
+                    case VolDownIndex: Speed = Speed+50; break;
+                }
+                Uart.Printf("\r MotorSpeed %i", Speed);
+                Motor.SetSpeed(Speed, smHalftep);
+            }
         }
     }
     if(EvtMsk & EVT_BOX1_CLOSED) {
