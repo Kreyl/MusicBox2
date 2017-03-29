@@ -31,12 +31,10 @@ void Uart_t::IRQDmaTxHandler() {
 
 extern "C" {
 void PrintfC(const char *format, ...) {
-//    chSysLock();
     va_list args;
     va_start(args, format);
     Uart.IPrintf(format, args);
     va_end(args);
-//    chSysUnlock();
 }
 }
 

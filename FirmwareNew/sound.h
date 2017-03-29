@@ -43,15 +43,15 @@
                         STM32_DMA_CR_TCIE         /* Enable Transmission Complete IRQ */
 // === EXTI IRQ Handler ===
 #if VS_DREQ == 0
-#define VS_IRQ_HANDLER    EXTI0_IRQHandler
+#define VS_IRQ_HANDLER    Vector58
 #elif VS_DREQ == 1
-#define VS_IRQ_HANDLER    EXTI1_IRQHandler
+#define VS_IRQ_HANDLER    Vector5C
 #elif VS_DREQ == 2
-#define VS_IRQ_HANDLER    EXTI2_IRQHandler
+#define VS_IRQ_HANDLER    Vector60
 #elif VS_DREQ == 3
-#define VS_IRQ_HANDLER    EXTI3_IRQHandler
+#define VS_IRQ_HANDLER    Vector64
 #elif VS_DREQ == 4
-#define VS_IRQ_HANDLER    EXTI4_IRQHandler
+#define VS_IRQ_HANDLER    Vector68
 #endif
 
 

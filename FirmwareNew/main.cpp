@@ -28,7 +28,6 @@ PinOutput_t BattMeasureSW(BattMeasSW_Pin);
 SteppingMotor_t Motor(MotorPins, MotorSHDN, MotorAngle, MotorRatio);
 LedSmooth_t Backlight(LED_PIN);
 
-
 // =============================== Main ========================================
 int main() {
     // ==== Init ====
@@ -92,16 +91,16 @@ void App_t::PowerON() {
 //    Backlight.SetPwmFrequencyHz(1000);
 
     if(Sleep::WasInStandby()) {
-        Uart.Printf("\rWasStandby"); // WakeUp
+//        Uart.Printf("\rWasStandby"); // WakeUp
         Sleep::DisableWakeupPin();
         Sleep::ClearStandbyFlag();
         SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
-        //Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
+        Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
 //        Uart.Printf("\r Load TrackNumber: %u", BackupSpc::ReadBackupRegister(TrackNumberBKP));
         BackupSpc::DisableAccess();
     }
     else {
-        Uart.Printf("\rPowerON");
+        Uart.Printf("PowerON\r");
         Sound.SetVolume(DEF_VolLevel);
     }
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
@@ -109,7 +108,7 @@ void App_t::PowerON() {
         Motor.Start();
 //        Backlight.StartOrContinue(lsqFadeIn);
     }
-    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
+//    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
     else ShutDown();
 }
 

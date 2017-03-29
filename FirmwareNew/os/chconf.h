@@ -484,8 +484,21 @@
  * @details This hook is invoked in case to a system halting error before
  *          the system is halted.
  */
+// ==== @KL ====
+#if defined _FROM_ASM_
+#define PrintfC(a, b)
+#else
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void PrintfCNow(const char *format, ...);
+#ifdef __cplusplus
+}
+#endif
+#endif
+
 #define CH_CFG_SYSTEM_HALT_HOOK(reason) {                                   \
-  /* System halt code here.*/                                               \
+        PrintfCNow("\rHalt: %S\r", reason);                      \
 }
 
 /** @} */
