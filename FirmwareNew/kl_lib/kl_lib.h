@@ -429,7 +429,7 @@ public:
     void EnableDMAOnCapture(uint8_t CaptureReq) const { ITmr->DIER |= (1 << (CaptureReq + 8)); }
     void GenerateUpdateEvt()  const { ITmr->EGR = TIM_EGR_UG; }
     void EnableIrqOnUpdate()  const { ITmr->DIER |= TIM_DIER_UIE; }
-    void EnableIrq(uint32_t IrqChnl, uint32_t IrqPriority) const { nvicEnableVector(IrqChnl, CORTEX_PRIO_MASK(IrqPriority)); }
+    void EnableIrq(uint32_t IrqChnl, uint32_t IrqPriority) const { nvicEnableVector(IrqChnl, IrqPriority); }
     void ClearIrqPendingBit() const { ITmr->SR &= ~TIM_SR_UIF; }
 };
 #endif

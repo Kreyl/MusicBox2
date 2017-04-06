@@ -49,7 +49,8 @@ int main() {
 
     // ==== Init Hard & Soft ====
     Uart.Init(115200, UART_GPIO, UART_TX_PIN, UART_GPIO, UART_RX_PIN);
-    Uart.Printf("\r%S AHB freq=%uMHz\r", BOARD_NAME, Clk.AHBFreqHz/1000000);
+    Uart.Printf("\r%S %S\r", APP_NAME);//, BUILD_TIME
+    Clk.PrintFreqs();
     // Report problem with clock if any
     if(ClkResult) Uart.Printf("Clock failure\r");
 
@@ -91,7 +92,7 @@ void App_t::PowerON() {
 //    Backlight.SetPwmFrequencyHz(1000);
 
     if(Sleep::WasInStandby()) {
-//        Uart.Printf("\rWasStandby"); // WakeUp
+        Uart.Printf("\rWasStandby"); // WakeUp
         Sleep::DisableWakeupPin();
         Sleep::ClearStandbyFlag();
         SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
@@ -105,13 +106,14 @@ void App_t::PowerON() {
     }
 
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
-        Uart.Printf("Here!\r");
         SndList.PlayRandomFileFromDir("0:\\");
         Motor.Start();
 //        Backlight.StartOrContinue(lsqFadeIn);
     }
-//    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
+    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
     else ShutDown();
+
+    Sound.Play("MusicBox.mp3");
 }
 
 
@@ -179,7 +181,6 @@ while(true) {
     }
 
  // ==== USB connected/disconnected ====
-    /*
     if(EvtMsk & EVT_USB_CONNECTED) {
 //        Sound.Stop();
         Motor.Stop();
@@ -208,7 +209,6 @@ while(true) {
 //            Backlight.StartOrContinue(lsqFadeIn);
         }
     }
-    */
 
     if(EvtMsk & EVT_UART_NEW_CMD) {
         OnCmd(&Uart);

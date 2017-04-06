@@ -50,7 +50,8 @@ int main() {
 
     // ==== Init Hard & Soft ====
     Uart.Init(115200, UART_GPIO, UART_TX_PIN, UART_GPIO, UART_RX_PIN);
-    Uart.Printf("\r%S AHB freq=%uMHz\r", BOARD_NAME, Clk.AHBFreqHz/1000000);
+    Uart.Printf("\r%S %S\r", APP_NAME); //, BUILD_TIME
+    Clk.PrintFreqs();
     // Report problem with clock if any
     if(ClkResult) Uart.Printf("Clock failure\r");
 

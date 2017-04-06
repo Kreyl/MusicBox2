@@ -211,10 +211,9 @@ vectors_t _vectors = {
 #if !defined(__DOXYGEN__)
 __attribute__ ((naked))
 #endif
+extern void PrintfC(const char *format, ...);
 void _unhandled_exception(void) {
-
-  while (TRUE)
-    ;
+    PrintfC("%S\r", __FUNCTION__);
 }
 
 void NMIVector(void) __attribute__((weak, alias("_unhandled_exception")));
