@@ -58,7 +58,7 @@ private:
     void TaskI();
 
 public:
-    SteppingMotor_t( MotorSetupPins_t AMotor, uint8_t APinSHDN, uint8_t AStepAngle, uint16_t AGearRatio) :
+    SteppingMotor_t(MotorSetupPins_t AMotor, uint8_t APinSHDN, uint8_t AStepAngle, uint16_t AGearRatio) :
         IMotor(AMotor), PinSHDN(APinSHDN), StepAngle(AStepAngle), GearRatio(AGearRatio) {}
 
     void StepperTmrCallbacHandler() {
