@@ -29,7 +29,7 @@
 #define VolumeBKP         1
 
 // Default Settings
-#define DEF_MotorSpeed    -500  // [об/мин * 0,1]
+#define DEF_MotorSpeed    -600  // [об/мин * 0,1]
 #define DEF_VolLevel      220
 
 #if 1 // ========================== GPIO =======================================
@@ -47,8 +47,8 @@
 #define BUTTONS_CNT     2
 #define VolUpIndex      0
 #define VolDownIndex    1
-#define BTN_VolUp_pin   GPIOA, 6, pudPullUp
-#define BTN_VolDown_pin GPIOA, 7, pudPullUp
+#define BTN_VolUp_pin   GPIOA, 7, pudPullUp
+#define BTN_VolDown_pin GPIOA, 6, pudPullUp
 
 // Battery Management
 #define BattMeasSW_Pin  { GPIOC, 1, omOpenDrain }

@@ -80,22 +80,22 @@ int main() {
 
 void App_t::PowerON() {
     Periphy.ON();
-    chThdSleepMilliseconds(300);    // Let power to stabilize
+    chThdSleepMilliseconds(200);    // Let power to stabilize
+    // Stepping Motor
+    Motor.Init(pdNoDelay);
+    Motor.SetSpeed(DEF_MotorSpeed, smHalftep);
     SD.Init();      // No power delay
     // Sound
     Sound.AmpfOn();
     Sound.Init();
     Sound.RegisterAppThd(chThdGetSelfX());
-    // Stepping Motor
-    Motor.Init(pdNoDelay);
-    Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
     // LED
 //    Backlight.Init();
 //    Backlight.SetBrightness(0);
 //    Backlight.SetPwmFrequencyHz(1000);
 
     if(Sleep::WasInStandby()) {
-        Uart.Printf("\rWasStandby"); // WakeUp
+        Uart.Printf("WasInStandby\r");
         Sleep::DisableWakeupPin();
         Sleep::ClearStandbyFlag();
         SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
@@ -104,7 +104,7 @@ void App_t::PowerON() {
         BackupSpc::DisableAccess();
     }
     else {
-        Uart.Printf("\rPowerON");
+        Uart.Printf("PowerON\r");
         Sound.SetVolume(DEF_VolLevel);
     }
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
@@ -165,7 +165,7 @@ while(true) {
                     case VolUpIndex:   Speed = Speed-50; break;
                     case VolDownIndex: Speed = Speed+50; break;
                 }
-                Uart.Printf("\r MotorSpeed %i", Speed);
+                Uart.Printf("MotorSpeed %i\r", Speed);
                 Motor.SetSpeed(Speed, smHalftep);
             }
         }
@@ -199,7 +199,7 @@ while(true) {
         Usb.Init();
         chThdSleepMilliseconds(540);
         Usb.Connect();
-        Uart.Printf("\rUsb On");
+        Uart.Printf("Usb On\r");
     }
     if(EvtMsk & EVT_USB_DISCONNECTED) {
         Usb.Shutdown();
@@ -207,7 +207,7 @@ while(true) {
         chSysLock();
         Clk.SetFreq12Mhz();
         chSysUnlock();
-        Uart.Printf("\rUsb Off");
+        Uart.Printf("Usb Off\r");
         if (!Box1Opened.IsHi() and !Box2Opened.IsHi())
             ShutDown();
         else{
@@ -236,14 +236,17 @@ void App_t::OnCmd(Shell_t *PShell) {
     }
     else if(PCmd->NameIs("Next")) {
         SndList.PlayRandomFileFromDir("0:\\");
+        PShell->Ack(OK);
     }
 
     else if(PCmd->NameIs("PerON")) {
         PowerON();
+        PShell->Ack(OK);
     }
     else if(PCmd->NameIs("PerOFF")) {
         Sound.Shutdown();
         Periphy.OFF();
+        PShell->Ack(OK);
     }
 
     else if(PCmd->NameIs("MotorSetF")) {
@@ -251,25 +254,22 @@ void App_t::OnCmd(Shell_t *PShell) {
             Uart.Printf("\r Data=%d", Data);
             Motor.SetSpeed(Data, smFullStep);
         }
+        PShell->Ack(OK);
     }
     else if(PCmd->NameIs("MotorSetH")) {
         if(PCmd->GetNextInt32(&Data) == OK) {
             Uart.Printf("\r Data=%d", Data);
             Motor.SetSpeed(Data, smHalftep);
         }
+        PShell->Ack(OK);
     }
     else if(PCmd->NameIs("MotorStart")) {
         Motor.Start();
+        PShell->Ack(OK);
     }
     else if(PCmd->NameIs("MotorStop")) {
         Motor.Stop();
-    }
-
-    else if(PCmd->NameIs("RUN_ADC")) {
-//        Adc.EnableVref();
-//        BattMeasureSW.SetLo(); // Connect R divider to GND
-//        chThdSleepMicroseconds(100);
-        Adc.StartMeasurement();
+        PShell->Ack(OK);
     }
 
     else PShell->Ack(CMD_UNKNOWN);
@@ -284,7 +284,7 @@ void App_t::ShutDown() {
 //    if (!WKUPpin.IsHi()){
     if (!Box1Opened.IsHi() and !Box2Opened.IsHi() and !ExternalPWR.IsHi()){
         chSysLock();
-        Uart.PrintfNow("\rShutDown");
+        Uart.PrintfNow("Sleep\r");
         Sound.Shutdown();
 //        Backlight.SetBrightness(0);
 //        Motor.Sleep();
