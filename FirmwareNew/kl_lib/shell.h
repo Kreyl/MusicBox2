@@ -43,24 +43,24 @@ public:
     }
     uint8_t GetNextString() {
         Token = strtok(NULL, DELIMITERS);
-        return (*Token == '\0')? retvEmpty : retvOk;
+        return (*Token == '\0')? EMPTY : OK;
     }
     uint8_t GetNextInt32(int32_t *POutput) {
         uint8_t r = GetNextString();
-        if(r != retvOk) return r;
+        if(r != OK) return r;
         else {
             char *p;
             *POutput = strtol(Token, &p, 0);
-            return (*p == '\0')? retvOk : retvNotANumber;
+            return (*p == '\0')? OK : NOT_A_NUMBER;
         }
     }
     uint8_t GetNextByte(uint8_t *POutput) {
         int32_t dw32;
         uint8_t r = GetNextInt32(&dw32);
-        if(r != retvOk) return r;
+        if(r != OK) return r;
         else {
             *POutput = (uint8_t)dw32;
-            return retvOk;
+            return OK;
         }
     }
 
@@ -68,20 +68,20 @@ public:
         int32_t dw32 = 0;
         for(int32_t i=0; i<Len; i++) {
             uint8_t r = GetNextInt32(&dw32);
-            if(r == retvOk) *Ptr++ = dw32;
+            if(r == OK) *Ptr++ = dw32;
             else return r;
         }
-        return retvOk;
+        return OK;
     }
 
     uint8_t GetArray(uint8_t *Ptr, int32_t Len) {
         int32_t dw32 = 0;
         for(int32_t i=0; i<Len; i++) {
             uint8_t r = GetNextInt32(&dw32);
-            if(r == retvOk) *Ptr++ = (uint8_t)dw32;
+            if(r == OK) *Ptr++ = (uint8_t)dw32;
             else return r;
         }
-        return retvOk;
+        return OK;
     }
 
     bool NameIs(const char *SCmd) { return (strcasecmp(Name, SCmd) == 0); }

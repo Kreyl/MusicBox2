@@ -206,7 +206,6 @@ static bool sdc_lld_prepare_write(SDCDriver *sdcp, uint32_t startblk,
  */
 static bool sdc_lld_wait_transaction_end(SDCDriver *sdcp, uint32_t n,
                                          uint32_t *resp) {
-
   /* Note the mask is checked before going to sleep because the interrupt
      may have occurred before reaching the critical zone.*/
   osalSysLock();
@@ -214,7 +213,6 @@ static bool sdc_lld_wait_transaction_end(SDCDriver *sdcp, uint32_t n,
     osalThreadSuspendS(&sdcp->thread);
   if ((sdcp->sdio->STA & SDIO_STA_DATAEND) == 0) {
     osalSysUnlock();
-    PrintfC("wait1\r");
     return HAL_FAILED;
   }
 
@@ -229,7 +227,6 @@ static bool sdc_lld_wait_transaction_end(SDCDriver *sdcp, uint32_t n,
   sdcp->sdio->ICR = STM32_SDIO_ICR_ALL_FLAGS;
   sdcp->sdio->DCTRL = 0;
   osalSysUnlock();
-
   /* Wait until interrupt flags to be cleared.*/
   /*while (((DMA2->LISR) >> (sdcp->dma->ishift)) & STM32_DMA_ISR_TCIF)
     dmaStreamClearInterrupt(sdcp->dma);*/
@@ -245,10 +242,8 @@ static bool sdc_lld_wait_transaction_end(SDCDriver *sdcp, uint32_t n,
 
   /* Finalize transaction.*/
   if (n > 1) {
-      PrintfC("wait2\r");
       return sdc_lld_send_cmd_short_crc(sdcp, MMCSD_CMD_STOP_TRANSMISSION, 0, resp);
   }
-  PrintfC("wait3\r");
   return HAL_SUCCESS;
 }
 
@@ -676,13 +671,13 @@ error:
  *
  * @notapi
  */
-extern void PrintfC(const char *format, ...);
+//extern void PrintfC(const char *format, ...);
 
 bool sdc_lld_read_aligned(SDCDriver *sdcp, uint32_t startblk,
                           uint8_t *buf, uint32_t blocks) {
   uint32_t resp[1];
 
-  PrintfC("sdc_lld_read_aligned %u %u\r", startblk, blocks);
+//  PrintfC("sdc_lld_read_aligned %u %u\r", startblk, blocks);
 
   osalDbgCheck(blocks < 0x1000000 / MMCSD_BLOCK_SIZE);
 
@@ -691,8 +686,6 @@ bool sdc_lld_read_aligned(SDCDriver *sdcp, uint32_t startblk,
   /* Checks for errors and waits for the card to be ready for reading.*/
   if (_sdc_wait_for_transfer_state(sdcp))
     return HAL_FAILED;
-
-  PrintfC("sdc1\r");
 
   /* Prepares the DMA channel for writing.*/
   dmaStreamSetMemory0(sdcp->dma, buf);
@@ -718,20 +711,15 @@ bool sdc_lld_read_aligned(SDCDriver *sdcp, uint32_t startblk,
                       SDIO_DCTRL_DTEN;
 
   if (sdc_lld_prepare_read(sdcp, startblk, blocks, resp) == TRUE) {
-      PrintfC("Err1\r");
       goto error;
   }
-
 
   if (sdc_lld_wait_transaction_end(sdcp, blocks, resp) == TRUE) {
-      PrintfC("Err2\r");
       goto error;
   }
-  PrintfC("sdc2\r");
   return HAL_SUCCESS;
 
 error:
-PrintfC("sdc2\r");
   sdc_lld_error_cleanup(sdcp, blocks, resp);
   return HAL_FAILED;
 }

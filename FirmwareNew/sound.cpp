@@ -61,6 +61,7 @@ void Sound_t::ITask() {
 #endif
 
         if(EvtMsk & VS_EVT_DREQ_IRQ) {
+//            Uart.Printf("DREQ_IRQ\r");
             chThdSleepMilliseconds(1);  // Make a pause after IRQ rise
             ISendNextData();
         }
@@ -161,19 +162,19 @@ void Sound_t::IPlayNew() {
 
     FRESULT rslt;
     // Open new file
-    Uart.Printf("\rPlay %S at %u", IFilename, IStartPosition);
+    Uart.Printf("Play %S at %u\r", IFilename, IStartPosition);
     rslt = f_open(&IFile, IFilename, FA_READ+FA_OPEN_EXISTING);
     IFilename = NULL;
     if (rslt != FR_OK) {
-        if (rslt == FR_NO_FILE) Uart.Printf("\r%S: not found", IFilename);
-        else Uart.Printf("\rOpenFile error: %u", rslt);
+        if (rslt == FR_NO_FILE) Uart.Printf("%S: not found\r", IFilename);
+        else Uart.Printf("OpenFile error: %u\r", rslt);
         Stop();
         return;
     }
     // Check if zero file
     if (IFile.fsize == 0) {
         f_close(&IFile);
-        Uart.Printf("\rEmpty file");
+        Uart.Printf("Empty file\r");
         Stop();
         return;
     }
@@ -194,7 +195,7 @@ void Sound_t::IPlayNew() {
 
 // ================================ Inner use ==================================
 void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
-    Uart.PrintfNow(" %S\r", __FUNCTION__);
+//    Uart.PrintfNow(" %S\r", __FUNCTION__);
     VsCmd_t FCmd;
     chSysLock();
     FCmd.OpCode = VS_WRITE_OPCODE;
@@ -217,18 +218,18 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
 }
 
 void Sound_t::ISendNextData() {
-//    Uart.PrintfNow("\rSN");
+//    Uart.PrintfNow("SendNext\r");
     dmaStreamDisable(VS_DMA);
     IDmaIdle = false;
     // ==== If command queue is not empty, send command ====
     msg_t msg = chMBFetch(&CmdBox, &ICmd.Msg, TIME_IMMEDIATE);
     if(msg == MSG_OK) {
-//        Uart.PrintfI("\rvCmd: %A", &ICmd, 4, ' ');
+//        Uart.PrintfI("vCmd: %A\r", &ICmd, 4, ' ');
         XCS_Lo();   // Start Cmd transmission
         dmaStreamSetMemory0(VS_DMA, &ICmd);
         dmaStreamSetTransactionSize(VS_DMA, sizeof(VsCmd_t));
         dmaStreamSetMode(VS_DMA, VS_DMA_MODE | STM32_DMA_CR_MINC);  // Memory pointer increase
-//        dmaStreamEnable(VS_DMA);
+        dmaStreamEnable(VS_DMA);
     }
 //    // ==== Send next chunk of data if any ====
     else switch(State) {

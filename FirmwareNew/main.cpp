@@ -29,16 +29,18 @@ SteppingMotor_t Motor(MotorPins, MotorSHDN, MotorAngle, MotorRatio);
 LedSmooth_t Backlight(LED_PIN);
 
 // =============================== Main ========================================
+FIL MyFile;
+
 int main() {
     // ==== Init ====
     // ==== Setup clock ====
     Clk.UpdateFreqValues();
     uint8_t ClkResult = FAILURE;
-    Clk.SetupFlashLatency(12);  // Setup Flash Latency for clock in MHz
+    Clk.SetupFlashLatency(24);  // Setup Flash Latency for clock in MHz
     // 12 MHz/6 = 2; 2*192 = 384; 384/8 = 48 (preAHB divider); 384/8 = 48 (USB clock)
     Clk.SetupPLLDividers(6, 192, pllSysDiv8, 8);
     // 48/4 = 12 MHz core clock. APB1 & APB2 clock derive on AHB clock
-    Clk.SetupBusDividers(ahbDiv4, apbDiv1, apbDiv1);
+    Clk.SetupBusDividers(ahbDiv2, apbDiv1, apbDiv1);
     if((ClkResult = Clk.SwitchToPLL()) == 0) Clk.HSIDisable();
     Clk.UpdateFreqValues();
 
@@ -49,13 +51,10 @@ int main() {
 
     // ==== Init Hard & Soft ====
     Uart.Init(115200, UART_GPIO, UART_TX_PIN, UART_GPIO, UART_RX_PIN);
-    Uart.Printf("\r%S %S\r", APP_NAME);//, BUILD_TIME
+    Uart.Printf("\r%S %S\r", APP_NAME, BUILD_TIME);
     Clk.PrintFreqs();
     // Report problem with clock if any
     if(ClkResult) Uart.Printf("Clock failure\r");
-
-    // USB related
-    MassStorage.Init();
 
     // Battery: ADC
     PinSetupAnalog(BattMeas_Pin);
@@ -69,8 +68,14 @@ int main() {
     // Setup outputs
     Periphy.InitSwich();
 
-    // ==== Main cycle ====
     App.PowerON();
+    // USB related
+    MassStorage.Init();
+
+//    FRESULT Rslt = f_open(&MyFile, "test.txt", FA_READ+FA_OPEN_EXISTING);
+//    Uart.Printf("Rslt: %u\r", Rslt);
+
+    // ==== Main cycle ====
     App.ITask();
 }
 
@@ -106,7 +111,7 @@ void App_t::PowerON() {
     }
 
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
-        SndList.PlayRandomFileFromDir("0:\\");
+//        SndList.PlayRandomFileFromDir("0:\\");
         Motor.Start();
 //        Backlight.StartOrContinue(lsqFadeIn);
     }
