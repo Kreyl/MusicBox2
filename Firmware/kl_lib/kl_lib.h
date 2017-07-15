@@ -119,6 +119,31 @@ static T Average(T *p, uint32_t Len) {
     return Rslt;
 }
 
+template <typename T>
+static T FindMediana(T *Arr, int32_t N) {
+    int32_t L = 1, r = N, i, j, k = N / 2;
+    T x;
+    while(L < r) {
+        x = Arr[k];
+        i = L;
+        j = r;
+        do {
+            while(Arr[i] < x) i++;
+            while(x < Arr[j]) j--;
+            if(i <= j) {
+                T tmp = Arr[i];
+                Arr[i] = Arr[j];
+                Arr[j] = tmp;
+                i++;
+                j--;
+            }
+            if(j < k) L = i;
+            if(k < i) r = j;
+        } while(i <= j);
+    }
+    return Arr[k];
+}
+
 #define ANY_OF_2(a, b1, b2)             (((a)==(b1)) or ((a)==(b2)))
 #define ANY_OF_3(a, b1, b2, b3)         (((a)==(b1)) or ((a)==(b2)) or ((a)==(b3)))
 #define ANY_OF_4(a, b1, b2, b3, b4)     (((a)==(b1)) or ((a)==(b2)) or ((a)==(b3)) or ((a)==(b4)))

@@ -29,8 +29,8 @@
 #define VolumeBKP         1
 
 // Default Settings
-#define DEF_MotorSpeed    -400  // [об/мин * 0,1]
-#define DEF_VolLevel      200
+#define DEF_MotorSpeed    -600  // [об/мин * 0,1]
+#define DEF_VolLevel      220
 
 #if 1 // ========================== GPIO =======================================
 
@@ -47,8 +47,8 @@
 #define BUTTONS_CNT     2
 #define VolUpIndex      0
 #define VolDownIndex    1
-#define BTN_VolUp_pin   GPIOA, 6, pudPullUp
-#define BTN_VolDown_pin GPIOA, 7, pudPullUp
+#define BTN_VolUp_pin   GPIOA, 7, pudPullUp
+#define BTN_VolDown_pin GPIOA, 6, pudPullUp
 
 // Battery Management
 #define BattMeasSW_Pin  { GPIOC, 1, omOpenDrain }
@@ -59,7 +59,7 @@
 // Beeper
 
 // Stepping Motor
-#define MotorPins       { GPIOB, 6, 7, 8, 9} //6, 7, 8, 9
+#define MotorPins       { GPIOB, 6, 7, 8, 9 }
 #define MotorSHDN       4
 #define MotorAngle      18
 #define MotorRatio      1
@@ -72,7 +72,7 @@
 #define Sensor2_Pin     GPIOB, 1, pudPullDown
 #define WKUP_pin        { GPIOA, 0, pudPullDown }
 
-// Switches
+// Peripheral power enable
 #define PeriphySW_Pin         GPIOC, 14
 #define PeriphyPWSW_Pin       GPIOC, 15
 #define PeriphySW_PinMode     omOpenDrain
@@ -87,7 +87,7 @@
 
 #if I2C_REQUIRED // ====================== I2C =================================
 #define I2C1_ENABLED     TRUE
-#define I2C_PIN       { GPIOA, 9, 10, I2C1_AF, I2C1_BAUDRATE, I2C1_DMA_TX, I2C1_DMA_RX}
+#define I2C_PIN       { GPIOA, 9, 10, I2C1_AF, I2C1_BAUDRATE, I2C1_DMA_TX, I2C1_DMA_RX }
 #endif
 
 #if 1 // =========================== SPI =======================================
@@ -121,7 +121,7 @@
 #endif
 
 #if 1 // =========================== DMA =======================================
-//#define STM32_DMA_REQUIRED  TRUE
+#define STM32_DMA_REQUIRED  TRUE
 // ==== Uart ====
 // Remap is made automatically if required
 #define UART_DMA_TX     STM32_DMA1_STREAM6

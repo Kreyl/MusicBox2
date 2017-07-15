@@ -15,21 +15,6 @@ Adc_t Adc;
 
 static const uint8_t AdcChannels[] = ADC_CHANNELS;
 
-uint32_t MedianFiltr(uint16_t *Data, uint8_t Sample_CNT){
-    uint8_t i;
-    uint16_t temp;
-    for (uint8_t c=0; c < Sample_CNT-1; c++)    //{     Uart.PrintfNow("\r index %u, Data %u", c, *(Data+c));
-        for (i=0; i < Sample_CNT-c-1; i++)
-            if (*(Data+i) > *(Data+i+1))
-                {
-                temp = *(Data+i);
-                 *(Data+i) = *(Data+i+1);
-                 *(Data+i+1) = temp;
-                }
-    // + Фильтр Хемминга: mass[v-1]/4 + mass[v]/2 + mass[v+1]/4;
-    return *(Data + Sample_CNT/2);
-}
-
 #if defined STM32F0XX
 
 // Wrapper for IRQ
@@ -256,7 +241,7 @@ uint32_t Adc_t::GetResult(uint8_t AChannel) {
 //    uint32_t Rslt = 0;
 //    for(uint32_t i = Start; i < Stop; i++) Rslt += IBuf[i];
 //    return Rslt / ADC_SAMPLE_CNT;
-    return MedianFiltr(&IBuf[Start], ADC_SAMPLE_CNT);
+    return FindMediana(&IBuf[Start], ADC_SAMPLE_CNT);
 }
 #endif // f4xx & F2xx, L151
 

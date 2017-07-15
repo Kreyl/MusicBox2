@@ -49,9 +49,6 @@ extern void PrintfC(const char *format, ...);
 void _unhandled_exception(void) {
 /*lint -restore*/
     PrintfC("%S\r", __FUNCTION__);
-//  while (true) {
-//      Uart.PrintfNow("\r no IRQ !!!");
-//  }
 }
 
 #if !defined(__DOXYGEN__)
