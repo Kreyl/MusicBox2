@@ -80,21 +80,21 @@ public:
         if(Rslt != FR_OK) {
             if (Rslt == FR_NO_FILE) Uart.Printf("\r%S: not found", AFileName);
             else Uart.Printf("\r%S: openFile error: %u", AFileName, Rslt);
-            return FAILURE;
+            return retvFail;
         }
         // Check if zero file
         if(File.fsize == 0) {
             f_close(&File);
             Uart.Printf("\rEmpty file");
-            return FAILURE;
+            return retvFail;
         }
-        return OK;
+        return retvOk;
     }
     uint8_t OpenRewrite(const char *AFileName) {
 //        Uart.Printf("\rOpenW %S", AFileName);
         FRESULT Rslt = f_open(&File, AFileName, FA_WRITE+FA_CREATE_ALWAYS);
         if(Rslt != FR_OK) Uart.Printf("\r%S: openFile error: %u", AFileName, Rslt);
-        return OK;
+        return retvOk;
     }
     void Close() { f_close(&File); }
 #endif

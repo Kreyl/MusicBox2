@@ -33,14 +33,14 @@ void SteppingMotor_t::SetSpeed(int32_t Speed, const StepMode_t Mode = smLikeBefo
         }         // обороты в минуту /10 -> интервал между шагами [mS]
     }
     if (StepInterval == 0) StepInterval = 1;
-    Uart.Printf("\r Step Interval %u mS", StepInterval);
+    Uart.Printf("Step Interval %u mS\r", StepInterval);
 }
 
 void SteppingMotor_t::TaskI() {
 //    uint16_t temp = PortGetValue(IMotor.PGpio);
 //    temp = temp | (FullStepOperation[StepIndex] << PinA1);
 //    PortSetValue(IMotor.PGpio, temp);
-//    Uart.PrintfI("\r Motor Step");
+//    Uart.PrintfI("Motor Step\r");
     if (MotorMode == smFullStep) {
         switch(StepIndex) {
             case 0: // 0b1010
@@ -121,7 +121,7 @@ void SteppingMotor_t::TaskI() {
         }
     }
 
-//    Uart.PrintfI("\r StepIndex %u", StepIndex);
+//    Uart.PrintfI("StepIndex %u\r", StepIndex);
 
     switch(Rotation) {
         case srClockwise:

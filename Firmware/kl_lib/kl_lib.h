@@ -72,21 +72,22 @@ void __early_init(void);
 #endif
 
 // Return values
-#define OK              0
-#define FAILURE         1
-#define TIMEOUT         2
-#define BUSY            3
-#define IN_PROGRESS     4
-#define CMD_ERROR       5
-#define CMD_UNKNOWN     6
-#define NEW             7
-#define LAST            8
-#define EMPTY           9
-#define OVERFLOW        10
-#define NOT_A_NUMBER    11
-#define WRITE_PROTECT   12
-#define END_OF_FILE     13
-#define NOT_FOUND       14
+#define retvOk              0
+#define retvFail            1
+#define retvTimeout         2
+#define retvBusy            3
+#define retvInProgress      4
+#define retvCmdError        5
+#define retvCmdUnknown      6
+#define retvBadValue        7
+#define retvNew             8
+#define retvLast            9
+#define retvEmpty           10
+#define retvOverflow        11
+#define retvNotANumber      12
+#define retvWriteProtect    13
+#define retvEndOfFile       14
+#define retvNotFound        15
 
 // Binary semaphores
 #define NOT_TAKEN       false

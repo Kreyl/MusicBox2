@@ -103,7 +103,7 @@ void Usb_t::IDeviceReset() {
         OTG_FS->oe[i].DOEPINT = 0xFF;
         Ep[i].State = esIdle;
         Ep[i].PktState = psNoPkt;
-        Ep[i].ResumeWaitingThd(FAILURE);
+        Ep[i].ResumeWaitingThd(retvFail);
     }
     // Disable and clear all EPs irqs
     OTG_FS->DAINT = 0xFFFFFFFF;
@@ -322,7 +322,7 @@ EpState_t Usb_t::DefaultReqHandler(uint8_t **PPtr, uint32_t *PLen) {
                 if(EpID != 0) {
                     if(SetupReq.wIndex & 0x80) Ep[EpID].SetStallIn();
                     else Ep[EpID].SetStallOut();
-                    Ep[EpID].ResumeWaitingThd(OK);
+                    Ep[EpID].ResumeWaitingThd(retvOk);
                 }
                 return esOutStatus;
             case USB_REQ_CLEAR_FEATURE:
@@ -333,7 +333,7 @@ EpState_t Usb_t::DefaultReqHandler(uint8_t **PPtr, uint32_t *PLen) {
                 if(EpID != 0) {
                     if(SetupReq.wIndex & 0x80) Ep[EpID].ClearStallIn();
                     else Ep[EpID].ClearStallOut();
-                    Ep[EpID].ResumeWaitingThd(OK);
+                    Ep[EpID].ResumeWaitingThd(retvOk);
                 }
                 return esOutStatus;
                 break;
@@ -433,7 +433,7 @@ void Usb_t::IEpOutHandler(uint8_t EpID) {
                 else {  // Transmission completed
                     Ep[EpID].PtrOut = nullptr;
                     Ep[EpID].SetNakOut();
-                    Ep[EpID].ResumeWaitingThd(OK);
+                    Ep[EpID].ResumeWaitingThd(retvOk);
                 }
             } // if buffer
         }
@@ -475,7 +475,7 @@ void Usb_t::IEpInHandler(uint8_t EpID) {
             } // switch
         } // if(EpID == 0)
         else {
-            ep->ResumeWaitingThd(OK);
+            ep->ResumeWaitingThd(retvOk);
         }
     }
     // TX FIFO empty
@@ -546,13 +546,13 @@ void Ep_t::ResumeWaitingThd(uint8_t ReadyMsg) {
 }
 
 uint8_t Ep_t::WaitUntilReady() {
-    if(!Buzy) return OK;
+    if(!Buzy) return retvOk;
     chSysLock();
-    uint8_t rslt = OK;
+    uint8_t rslt = retvOk;
     PThread = chThdGetSelfX();
     chSchGoSleepS(CH_STATE_SUSPENDED);
     PThread = nullptr;
-    if(chThdGetSelfX()->p_u.rdymsg != MSG_OK) rslt = FAILURE;
+    if(chThdGetSelfX()->p_u.rdymsg != MSG_OK) rslt = retvFail;
     chSysUnlock();
     return rslt;
 }

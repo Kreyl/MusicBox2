@@ -26,19 +26,19 @@ protected:
     T IBuf[Sz], *PRead=IBuf, *PWrite=IBuf;
 public:
     uint8_t Get(T *p) {
-        if(IFullSlotsCount == 0) return FAILURE;
+        if(IFullSlotsCount == 0) return retvFail;
         memcpy(p, PRead, sizeof(T));
         if(++PRead > (IBuf + Sz - 1)) PRead = IBuf;     // Circulate buffer
         IFullSlotsCount--;
-        return OK;
+        return retvOk;
     }
 
     uint8_t Put(T *p) {
-        if(IFullSlotsCount >= Sz) return FAILURE;
+        if(IFullSlotsCount >= Sz) return retvFail;
         memcpy(PWrite, p, sizeof(T));
         if(++PWrite > (IBuf + Sz - 1)) PWrite = IBuf;   // Circulate buffer
         IFullSlotsCount++;
-        return OK;
+        return retvOk;
     }
     inline uint32_t GetEmptyCount() { return Sz-IFullSlotsCount; }
     inline uint32_t GetFullCount()  { return IFullSlotsCount; }
@@ -101,7 +101,7 @@ template <typename T, uint32_t Sz>
 class CircBufNumber_t : public CircBuf_t<T, Sz> {
 public:
     uint8_t Get(T *p, uint32_t ALength) {
-        uint8_t Rslt = FAILURE;
+        uint8_t Rslt = retvFail;
         if(this->IFullSlotsCount >= ALength) {  // if enough data
             this->IFullSlotsCount -= ALength;   // 'Length' slots will be freed
             uint32_t PartSz = (this->IBuf + Sz) - this->PRead;  // Data from PRead to right bound
@@ -114,13 +114,13 @@ public:
             memcpy(p, this->PRead, ALength);
             this->PRead += ALength;
             if(this->PRead >= (this->IBuf + Sz)) this->PRead = this->IBuf;   // Circulate pointer
-            Rslt = OK;
+            Rslt = retvOk;
         }
         return Rslt;
     }
 
     uint8_t Put(T *p, uint32_t Length) {
-        uint8_t Rslt = FAILURE;
+        uint8_t Rslt = retvFail;
         if(this->GetEmptyCount() >= Length) {    // check if Buffer overflow
             this->IFullSlotsCount += Length;                      // 'Length' slots will be occupied
             uint32_t PartSz = (this->IBuf + Sz) - this->PWrite;  // Data from PWrite to right bound
@@ -133,7 +133,7 @@ public:
             memcpy(this->PWrite, p, Length);
             this->PWrite += Length;
             if(this->PWrite >= (this->IBuf + Sz)) this->PWrite = this->IBuf; // Circulate pointer
-            Rslt = OK;
+            Rslt = retvOk;
         }
         return Rslt;
     }

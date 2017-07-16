@@ -34,7 +34,7 @@ int main() {
     // ==== Init ====
     // ==== Setup clock ====
     Clk.UpdateFreqValues();
-    uint8_t ClkResult = FAILURE;
+    uint8_t ClkResult = retvFail;
     Clk.SetupFlashLatency(12);  // Setup Flash Latency for clock in MHz
     // 12 MHz/6 = 2; 2*192 = 384; 384/8 = 48 (preAHB divider); 384/8 = 48 (USB clock)
     Clk.SetupPLLDividers(6, 192, pllSysDiv8, 8);
@@ -144,7 +144,7 @@ while(true) {
     if(EvtMsk & EVT_BUTTONS) {
 //        Uart.Printf("BtnsEvt\r");
         BtnEvtInfo_t EInfo;
-        while(BtnGetEvt(&EInfo) == OK) {
+        while(BtnGetEvt(&EInfo) == retvOk) {
             if(EInfo.Type == beShortPress) {
 //                Uart.Printf("Btn %u press\r", EInfo.BtnID);
                 switch(EInfo.BtnID) {
@@ -200,6 +200,7 @@ while(true) {
         chThdSleepMilliseconds(540);
         Usb.Connect();
         Uart.Printf("Usb On\r");
+        Clk.PrintFreqs();
     }
     if(EvtMsk & EVT_USB_DISCONNECTED) {
         Usb.Shutdown();
@@ -208,6 +209,7 @@ while(true) {
         Clk.SetFreq12Mhz();
         chSysUnlock();
         Uart.Printf("Usb Off\r");
+        Clk.PrintFreqs();
         if (!Box1Opened.IsHi() and !Box2Opened.IsHi())
             ShutDown();
         else{
@@ -232,47 +234,47 @@ void App_t::OnCmd(Shell_t *PShell) {
     Uart.Printf("\r New Cmd: %S\r", PCmd->Name);
     // Handle command
     if(PCmd->NameIs("Ping")) {
-        PShell->Ack(OK);
+        PShell->Ack(retvOk);
     }
     else if(PCmd->NameIs("Next")) {
         SndList.PlayRandomFileFromDir("0:\\");
-        PShell->Ack(OK);
+        PShell->Ack(retvOk);
     }
 
     else if(PCmd->NameIs("PerON")) {
         PowerON();
-        PShell->Ack(OK);
+        PShell->Ack(retvOk);
     }
     else if(PCmd->NameIs("PerOFF")) {
         Sound.Shutdown();
         Periphy.OFF();
-        PShell->Ack(OK);
+        PShell->Ack(retvOk);
     }
 
     else if(PCmd->NameIs("MotorSetF")) {
-        if(PCmd->GetNextInt32(&Data) == OK) {
+        if(PCmd->GetNextInt32(&Data) == retvOk) {
             Uart.Printf("\r Data=%d", Data);
             Motor.SetSpeed(Data, smFullStep);
         }
-        PShell->Ack(OK);
+        PShell->Ack(retvOk);
     }
     else if(PCmd->NameIs("MotorSetH")) {
-        if(PCmd->GetNextInt32(&Data) == OK) {
+        if(PCmd->GetNextInt32(&Data) == retvOk) {
             Uart.Printf("\r Data=%d", Data);
             Motor.SetSpeed(Data, smHalftep);
         }
-        PShell->Ack(OK);
+        PShell->Ack(retvOk);
     }
     else if(PCmd->NameIs("MotorStart")) {
         Motor.Start();
-        PShell->Ack(OK);
+        PShell->Ack(retvOk);
     }
     else if(PCmd->NameIs("MotorStop")) {
         Motor.Stop();
-        PShell->Ack(OK);
+        PShell->Ack(retvOk);
     }
 
-    else PShell->Ack(CMD_UNKNOWN);
+    else PShell->Ack(retvCmdUnknown);
 }
 
 

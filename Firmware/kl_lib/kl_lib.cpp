@@ -364,16 +364,16 @@ uint32_t ArrToU32AsBE(uint8_t *PArr) {
 }
 void U16ChangeEndianness(uint16_t *p) { *p = __REV16(*p); }
 uint8_t TryStrToUInt32(char* S, uint32_t *POutput) {
-    if(*S == '\0') return EMPTY;
+    if(*S == '\0') return retvEmpty;
     char *p;
     *POutput = strtoul(S, &p, 0);
-    return (*p == 0)? OK : NOT_A_NUMBER;
+    return (*p == 0)? retvOk : retvNotANumber;
 }
 uint8_t TryStrToInt32(char* S, int32_t *POutput) {
-    if(*S == '\0') return EMPTY;
+    if(*S == '\0') return retvEmpty;
     char *p;
     *POutput = strtol(S, &p, 0);
-    return (*p == '\0')? OK : NOT_A_NUMBER;
+    return (*p == '\0')? retvOk : retvNotANumber;
 }
 
 uint16_t BuildUint16(uint8_t Lo, uint8_t Hi) {
@@ -396,10 +396,10 @@ uint32_t BuildUint32(uint8_t Lo, uint8_t MidLo, uint8_t MidHi, uint8_t Hi) {
 
 // ==== Float ====
 uint8_t TryStrToFloat(char* S, float *POutput) {
-    if(*S == '\0') return EMPTY;
+    if(*S == '\0') return retvEmpty;
     char *p;
     *POutput = strtof(S, &p);
-    return (*p == '\0')? OK : NOT_A_NUMBER;
+    return (*p == '\0')? retvOk : retvNotANumber;
 }
 }; // namespace
 #endif

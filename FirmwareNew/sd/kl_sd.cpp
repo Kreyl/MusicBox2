@@ -78,7 +78,7 @@ uint8_t iniFile_t::ReadString(const char *ASection, const char *AKey, char **PPO
     do {
         if(f_gets(IStr, SD_STRING_SZ, PFile) == nullptr) {
             Uart.Printf("\riniNoSection %S", ASection);
-            return FAILURE;
+            return retvFail;
         }
         StartP = skipleading(IStr);
         if((*StartP != '[') or (*StartP == ';') or (*StartP == '#')) continue;
@@ -91,7 +91,7 @@ uint8_t iniFile_t::ReadString(const char *ASection, const char *AKey, char **PPO
     do {
         if(!f_gets(IStr, SD_STRING_SZ, PFile) or *(StartP = skipleading(IStr)) == '[') {
 //            Uart.Printf("\riniNoKey");
-            return FAILURE;
+            return retvFail;
         }
         StartP = skipleading(IStr);
         if((*StartP == ';') or (*StartP == '#')) continue;
@@ -113,41 +113,41 @@ uint8_t iniFile_t::ReadString(const char *ASection, const char *AKey, char **PPO
     *EndP = '\0';   // Terminate at a comment
     striptrailing(StartP);
     *PPOutput = StartP;
-    return OK;
+    return retvOk;
 }
 
 uint8_t iniFile_t::ReadInt32(const char *ASection, const char *AKey, int32_t *POutput) {
     char *S = nullptr;
-    if(ReadString(ASection, AKey, &S) == OK) {
+    if(ReadString(ASection, AKey, &S) == retvOk) {
         *POutput = strtol(S, NULL, 10);
-        return OK;
+        return retvOk;
     }
-    else return FAILURE;
+    else return retvFail;
 }
 
 static inline uint8_t CharToByte(char c, uint8_t *Rslt) {
     if     (c >= '0' and c <= '9') *Rslt = c - '0';
     else if(c >= 'a' and c <= 'f') *Rslt = 10 + c - 'a';
     else if(c >= 'A' and c <= 'F') *Rslt = 10 + c - 'A';
-    else return FAILURE;
-    return OK;
+    else return retvFail;
+    return retvOk;
 }
 
 uint8_t iniFile_t::ReadArray(const char *ASection, const char *AKey, uint8_t *p, uint32_t Sz) {
     char *S = nullptr;
-    if(p == nullptr or Sz == 0) return FAILURE;
+    if(p == nullptr or Sz == 0) return retvFail;
     for(uint32_t i=0; i<Sz; i++) p[i] = 0;
-    if(ReadString(ASection, AKey, &S) == OK) {
+    if(ReadString(ASection, AKey, &S) == retvOk) {
         for(uint32_t i=0; i<Sz; i++) {
-            if(*S == 0) return OK;
+            if(*S == 0) return retvOk;
             uint8_t bHi, bLo;
-            if(CharToByte(*S++, &bHi) != OK) return FAILURE;
-            if(CharToByte(*S++, &bLo) != OK) return FAILURE;
+            if(CharToByte(*S++, &bHi) != retvOk) return retvFail;
+            if(CharToByte(*S++, &bLo) != retvOk) return retvFail;
             p[i] = (bHi << 4) | bLo;
         } // for i
-        return OK;
+        return retvOk;
     } // if read string
-    else return FAILURE;
+    else return retvFail;
 }
 
 

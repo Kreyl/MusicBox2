@@ -15,6 +15,7 @@
 #include "evt_mask.h"
 #include "kl_sd.h"
 #include "ff.h"
+#include "kl_fs_utils.h"
 #include "MassStorage.h"
 #include "kl_adc.h"
 #include "battery_consts.h"

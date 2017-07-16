@@ -159,7 +159,7 @@
  * SDIO clock divider.
  */
 #if (defined(STM32F4XX) || defined(STM32F2XX))
-#define STM32_SDIO_DIV_HS                   2
+#define STM32_SDIO_DIV_HS                   2       // for 24MHz work: 0
 #define STM32_SDIO_DIV_LS                   120
 
 #elif STM32_HCLK > 48000000
@@ -182,7 +182,7 @@
   (((STM32_PLL48CLK / (STM32_SDIO_DIV_HS + 2)) / 1000) *                    \
    STM32_SDC_WRITE_TIMEOUT_MS)
    */
-#define STM32_SDC_READ_TIMEOUT          (12000 * 5)
+#define STM32_SDC_READ_TIMEOUT          (12000 * 5)     // for 24MHz work: (24000 * 25)
 /*
 \
 //  (((STM32_PLL48CLK / (STM32_SDIO_DIV_HS + 2)) / 1000) *                    \

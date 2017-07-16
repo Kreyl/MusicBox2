@@ -184,7 +184,7 @@ void Sound_t::IPlayNew() {
     }
 
     // Initially, fill both buffers
-    if(Buf1.ReadFromFile(&IFile) != OK) { Stop(); return; }
+    if(Buf1.ReadFromFile(&IFile) != retvOk) { Stop(); return; }
     // Fill second buffer if needed
     if(Buf1.DataSz == VS_DATA_BUF_SZ) Buf2.ReadFromFile(&IFile);
 
@@ -323,7 +323,7 @@ uint8_t Sound_t::CmdRead(uint8_t AAddr, uint16_t* AData) {
     IData = ReadWriteByte(0);       // Read lower byte
     *AData += IData;
     XCS_Hi();   // End transmission
-    return OK;
+    return retvOk;
 }
 uint8_t Sound_t::CmdWrite(uint8_t AAddr, uint16_t AData) {
 //    uint8_t IReply;
@@ -335,5 +335,5 @@ uint8_t Sound_t::CmdWrite(uint8_t AAddr, uint16_t AData) {
     ReadWriteByte(AData >> 8);      // Send upper byte
     ReadWriteByte(0x00FF & AData);  // Send lower byte
     XCS_Hi();                       // End transmission
-    return OK;
+    return retvOk;
 }

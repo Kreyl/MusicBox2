@@ -77,7 +77,7 @@ void MassStorage_t::UsbOutTask() {
         // Receive header
         Usb.PEpBulkOut->StartReceiveToBuf((uint8_t*)&CmdBlock, MS_CMD_SZ);
         uint8_t rslt = Usb.PEpBulkOut->WaitUntilReady();
-        if(rslt == OK) SCSICmdHandler();
+        if(rslt == retvOk) SCSICmdHandler();
     }
 }
 #endif
@@ -133,7 +133,7 @@ void MassStorage_t::SCSICmdHandler() {
     bool ShouldSendStatus = true;
     if(!CmdOk) {
         Usb.PEpBulkIn->SetStallIn();
-        ShouldSendStatus = (Usb.PEpBulkIn->WaitUntilReady() == OK);
+        ShouldSendStatus = (Usb.PEpBulkIn->WaitUntilReady() == retvOk);
     }
     if(ShouldSendStatus) Usb.PEpBulkIn->StartTransmitBuf((uint8_t*)&CmdStatus, sizeof(MS_CommandStatusWrapper_t));
 }
@@ -313,7 +313,7 @@ bool MassStorage_t::CmdWrite10() {
     Usb.PEpBulkOut->StartReceiveToBuf(Buf1, BytesToReceive1);
     while(TotalBlocks != 0) {
         // ==== Wait end of reception1 ====
-        if(Usb.PEpBulkOut->WaitUntilReady() != OK) {
+        if(Usb.PEpBulkOut->WaitUntilReady() != retvOk) {
             Uart.Printf("Rcv1 fail\r");
             return false;
         }
@@ -335,7 +335,7 @@ bool MassStorage_t::CmdWrite10() {
         BlockAddress += BlocksToWrite1;
 
         // ==== Wait end of reception2 ====
-        if(Usb.PEpBulkOut->WaitUntilReady() != OK) {
+        if(Usb.PEpBulkOut->WaitUntilReady() != retvOk) {
             Uart.Printf("Rcv2 fail\r");
             return false;
         }
