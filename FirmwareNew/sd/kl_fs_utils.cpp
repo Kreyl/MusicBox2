@@ -8,6 +8,7 @@
 #include "kl_fs_utils.h"
 #include "kl_lib.h"
 #include "shell.h"
+#include "uart.h"
 
 // Variables
 FILINFO FileInfo;
@@ -20,21 +21,21 @@ uint8_t TryOpenFileRead(const char *Filename, FIL *PFile) {
         // Check if zero file
         if(PFile->fsize == 0) {
             f_close(PFile);
-            Printf("Empty file %S\r", Filename);
+            Uart.Printf("Empty file %S\r", Filename);
             return retvEmpty;
         }
         return retvOk;
     }
     else {
-        if (rslt == FR_NO_FILE) PrintfC("%S: not found\r", Filename);
-        else Printf("OpenFile error: %u\r", rslt);
+        if (rslt == FR_NO_FILE) Uart.Printf("%S: not found\r", Filename);
+        else Uart.Printf("OpenFile error: %u\r", rslt);
         return retvFail;
     }
 }
 
 uint8_t CheckFileNotEmpty(FIL *PFile) {
     if(PFile->fsize == 0) {
-        Printf("Empty file\r");
+        Uart.Printf("Empty file\r");
         return retvEmpty;
     }
     else return retvOk;
@@ -121,14 +122,14 @@ uint8_t iniReadString(const char *AFileName, const char *ASection, const char *A
     // Open file
     rslt = f_open(&IFile, AFileName, FA_READ+FA_OPEN_EXISTING);
     if(rslt != FR_OK) {
-        if (rslt == FR_NO_FILE) Printf("%S: not found\r", AFileName);
-        else Printf("%S: openFile error: %u\r", AFileName, rslt);
+        if (rslt == FR_NO_FILE) Uart.Printf("%S: not found\r", AFileName);
+        else Uart.Printf("%S: openFile error: %u\r", AFileName, rslt);
         return retvFail;
     }
     // Check if zero file
     if(IFile.fsize == 0) {
         f_close(&IFile);
-        Printf("Empty file\r");
+        Uart.Printf("Empty file\r");
         return retvFail;
     }
     // Move through file one line at a time until a section is matched or EOF.
@@ -136,7 +137,7 @@ uint8_t iniReadString(const char *AFileName, const char *ASection, const char *A
     int32_t len = strlen(ASection);
     do {
         if(f_gets(IStr, SD_STRING_SZ, &IFile) == nullptr) {
-            Printf("iniNoSection %S\r", ASection);
+            Uart.Printf("iniNoSection %S\r", ASection);
             f_close(&IFile);
             return retvFail;
         }
@@ -150,7 +151,7 @@ uint8_t iniReadString(const char *AFileName, const char *ASection, const char *A
     len = strlen(AKey);
     do {
         if(!f_gets(IStr, SD_STRING_SZ, &IFile) or *(StartP = skipleading(IStr)) == '[') {
-            Printf("iniNoKey\r");
+            Uart.Printf("iniNoKey\r");
             f_close(&IFile);
             return retvFail;
         }
