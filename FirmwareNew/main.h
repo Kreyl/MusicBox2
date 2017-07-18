@@ -44,6 +44,7 @@ public:
     // Inner use
 
     void PowerON();
+    void LoadSettings(const char* FileName);
     void ShutDown();
     void ITask();
 };

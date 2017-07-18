@@ -72,6 +72,7 @@ int main() {
     // USB related
     MassStorage.Init();
 
+    App.LoadSettings("Settings.ini");
 //    FRESULT Rslt = f_open(&MyFile, "test.txt", FA_READ+FA_OPEN_EXISTING);
 //    Uart.Printf("Rslt: %u\r", Rslt);
 
@@ -85,7 +86,6 @@ void App_t::PowerON() {
     chThdSleepMilliseconds(200);    // Let power to stabilize
     // Stepping Motor
     Motor.Init(pdNoDelay);
-    Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
     SD.Init();      // No power delay
     // Sound
     Sound.AmpfOn();
@@ -96,6 +96,18 @@ void App_t::PowerON() {
 //    Backlight.SetBrightness(0);
 //    Backlight.SetPwmFrequencyHz(1000);
 
+    if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
+        SndList.PlayRandomFileFromDir("0:\\");
+//        Backlight.StartOrContinue(lsqFadeIn);
+    }
+    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
+    else ShutDown();
+}
+
+
+void App_t::LoadSettings(const char* SettingsFileName) {
+    // Load Sound Settings
+    uint8_t VolLevel = 0;
     if(Sleep::WasInStandby()) {
         Uart.Printf("WasInStandby\r");
         Sleep::DisableWakeupPin();
@@ -107,26 +119,36 @@ void App_t::PowerON() {
     }
     else {
         Uart.Printf("PowerON\r");
-        Sound.SetVolume(DEF_VolLevel);
+        if (iniRead(SettingsFileName, "Sound", "DefVolume", &VolLevel) == retvOk)
+            Sound.SetVolume(VolLevel);
+        else {
+            Uart.Printf("Sound <- Def VolLevel\r");
+            Sound.SetVolume(DEF_VolLevel);
+        }
     }
 
-    if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
-        SndList.PlayRandomFileFromDir("0:\\");
+    // Load Motor Settings
+    int32_t Speed = 0;
+    if (iniRead(SettingsFileName, "Motor", "Speed", &Speed) == retvOk) {
+        if (ABS(Speed) > 100) {
+            Motor.SetSpeed(Speed, smHalftep);
+            Motor.Start();
+        } else
+            Motor.Sleep();
+    } else {
+        Uart.Printf("Motor <- Def Speed\r");
+        Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
         Motor.Start();
-//        Backlight.StartOrContinue(lsqFadeIn);
     }
-    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
-    else ShutDown();
 }
 
 
-//* TmrCheckBtn.InitAndStart(chThdGetSelfX());
 __attribute__ ((__noreturn__))
 void App_t::ITask() {
 
 #if 0 // Создать файл (проба)
     FIL File;
-    FRESULT Rslt = f_open(&File, "ID_Store.ini",FA_READ+FA_OPEN_EXISTING+FA_CREATE_NEW);//
+    FRESULT Rslt = f_open(&File, "ID_Store.ini",FA_READ+FA_OPEN_EXISTING+FA_CREATE_NEW);
     if(Rslt != FR_OK) {
         if (Rslt == FR_NO_FILE) Uart.Printf("\r%S: not found", "ID_Store.ini");
         else Uart.Printf("\r%S: openFile error: %u", "ID_Store.ini", Rslt);
@@ -281,7 +303,7 @@ void App_t::ShutDown() {
 //    if (!WKUPpin.IsHi()){
     if (!Box1Opened.IsHi() and !Box2Opened.IsHi() and !ExternalPWR.IsHi()){
         chSysLock();
-        Uart.PrintfNow("Sleep\r");
+        Uart.PrintfNow("Sleep\r\r");
         Sound.Shutdown();
 //        Backlight.SetBrightness(0);
 //        Motor.Sleep();

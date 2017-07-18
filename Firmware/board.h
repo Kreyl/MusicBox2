@@ -29,7 +29,7 @@
 #define VolumeBKP         1
 
 // Default Settings
-#define DEF_MotorSpeed    -600  // [об/мин * 0,1]
+#define DEF_MotorSpeed    -500  // [об/мин * 0,1]
 #define DEF_VolLevel      220
 
 #if 1 // ========================== GPIO =======================================

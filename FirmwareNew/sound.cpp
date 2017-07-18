@@ -2,6 +2,7 @@
 #include <string.h>
 #include "evt_mask.h"
 #include "sound.h"
+#include "kl_lib.h"
 
 Sound_t Sound;
 Spi_t ISpi(VS_SPI);

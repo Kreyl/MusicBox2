@@ -29,7 +29,7 @@
 #define VolumeBKP         1
 
 // Default Settings
-#define DEF_MotorSpeed    -16  // [об/мин * 0,1]
+#define DEF_MotorSpeed    -600  // 16 [об/мин * 0,1]
 #define DEF_VolLevel      220
 
 #if 1 // ========================== GPIO =======================================
@@ -62,7 +62,7 @@
 #define MotorPins       { GPIOB, 6, 7, 8, 9 }
 #define MotorSHDN       4
 #define MotorAngle      18
-#define MotorRatio      100
+#define MotorRatio      1   //100
 // Max. Starting Frequency    900 PPS
 // Max. Slewing Frequency     1200 PPS
 // Pulse Per Second, т.е импульсов (шагов) за секунду (целых шагов или микрошагов)
