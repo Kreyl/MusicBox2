@@ -5,56 +5,14 @@
  * Created on June 15, 2011, 4:44 PM
  */
 
-#ifndef MEDIA_H
-#define	MEDIA_H
+#pragma once
 
 #include "kl_sd.h"
 #include <stdint.h>
-#include "uart.h"
 #include "kl_lib.h"
+#include "uart.h"
 
 // ==== Defines ====
-#define VS_GPIO         GPIOB
-// Pins
-#define VS_XCS          10
-#define VS_XDCS         11
-#define VS_RST          12
-#define VS_DREQ         2
-#define VS_XCLK         13
-#define VS_SO           14
-#define VS_SI           15
-// Amplifier
-#define VS_AMPF_EXISTS  TRUE
-#define VS_AMPF_GPIO    GPIOA
-#define VS_AMPF_PIN     15
-
-// SPI
-#define VS_SPI          SPI2
-#define VS_AF           AF5
-#define VS_SPI_RCC_EN() rccEnableSPI2(FALSE)
-// DMA
-#define VS_DMA          STM32_DMA1_STREAM4
-#define VS_DMA_CHNL     0
-#define VS_DMA_MODE     STM32_DMA_CR_CHSEL(VS_DMA_CHNL) | \
-                        DMA_PRIORITY_LOW | \
-                        STM32_DMA_CR_MSIZE_BYTE | \
-                        STM32_DMA_CR_PSIZE_BYTE | \
-                        STM32_DMA_CR_DIR_M2P |    /* Direction is memory to peripheral */ \
-                        STM32_DMA_CR_TCIE         /* Enable Transmission Complete IRQ */
-// === EXTI IRQ Handler ===
-#if VS_DREQ == 0
-#define VS_IRQ_HANDLER    Vector58
-#elif VS_DREQ == 1
-#define VS_IRQ_HANDLER    Vector5C
-#elif VS_DREQ == 2
-#define VS_IRQ_HANDLER    Vector60
-#elif VS_DREQ == 3
-#define VS_IRQ_HANDLER    Vector64
-#elif VS_DREQ == 4
-#define VS_IRQ_HANDLER    Vector68
-#endif
-
-
 // Command codes
 #define VS_READ_OPCODE  0b00000011
 #define VS_WRITE_OPCODE 0b00000010
@@ -88,18 +46,14 @@ union VsCmd_t {
 #define VS_VOLUME_STEP_BIG      10
 #define VS_INITIAL_ATTENUATION  0x33
 #define VS_CMD_BUF_SZ           4       // Number of cmds in buf
-#define VS_DATA_BUF_SZ          4096    // bytes. Must be multiply of 512.
-#define ZERO_SEQ_LEN            128     // After file end, send several zeroes
-
+#define VS_DATA_BUF_SZ          1024    // bytes. Must be multiply of 512.
 
 struct VsBuf_t {
     uint8_t Data[VS_DATA_BUF_SZ], *PData;
     UINT DataSz;
     FRESULT ReadFromFile(FIL *PFile) {
         PData = Data;   // Set pointer at beginning
-        FRESULT rslt = f_read(PFile, Data, VS_DATA_BUF_SZ, &DataSz);
-//        Uart.Printf("\rRead %u\r", DataSz);
-        return rslt;
+        return f_read(PFile, Data, VS_DATA_BUF_SZ, &DataSz);
     }
 };
 
@@ -110,12 +64,9 @@ struct VsBuf_t {
 #define VS_EVT_DMA_DONE     (eventmask_t)8
 #define VS_EVT_DREQ_IRQ     (eventmask_t)16
 
-extern PinIrq_t IDreq;
-extern  Spi_t ISpi;
-
-class Sound_t {
+class Sound_t : private IrqHandler_t {
 private:
-//    Spi_t ISpi;
+    Spi_t ISpi {VS_SPI};
     msg_t CmdBuf[VS_CMD_BUF_SZ];
     mailbox_t CmdBox;
     VsCmd_t ICmd;
@@ -130,22 +81,20 @@ private:
     // Pin operations
     inline void Rst_Lo()   { PinSetLo(VS_GPIO, VS_RST); }
     inline void Rst_Hi()   { PinSetHi(VS_GPIO, VS_RST); }
-    inline void XCS_Lo()   { PinSetLo(VS_GPIO, VS_XCS); DelayLoop(180); }
-    inline void XCS_Hi()   { PinSetHi(VS_GPIO, VS_XCS);  }
-    inline void XDCS_Lo()  { PinSetLo(VS_GPIO, VS_XDCS); DelayLoop(360); }
+    inline void XCS_Lo()   { PinSetLo(VS_GPIO, VS_XCS); }
+    inline void XCS_Hi()   { PinSetHi(VS_GPIO, VS_XCS); }
+    inline void XDCS_Lo()  { PinSetLo(VS_GPIO, VS_XDCS);  }
     inline void XDCS_Hi()  { PinSetHi(VS_GPIO, VS_XDCS); }
     // Cmds
     uint8_t CmdRead(uint8_t AAddr, uint16_t *AData);
     uint8_t CmdWrite(uint8_t AAddr, uint16_t AData);
     void AddCmd(uint8_t AAddr, uint16_t AData);
     inline void StartTransmissionIfNotBusy() {
-        chSysLock();
         if(IDmaIdle and IDreq.IsHi()) {
-//            Uart.PrintfI("\rTXinB");
+//            Uart.Printf("T");
             IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
             IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
         }
-        chSysUnlock();
     }
     void PrepareToStop();
     void SendZeroes();
@@ -193,7 +142,6 @@ public:
         if(IAttenuation > 0x8F) IAttenuation = 0x8F;
         AddCmd(VS_REG_VOL, ((IAttenuation * 256) + IAttenuation));
     }
-    void RegisterAppThd(thread_t *PThd) { IPAppThd = PThd; }
 
     uint32_t GetPosition() { return IFile.fptr; }
 #if VS_AMPF_EXISTS
@@ -201,8 +149,9 @@ public:
     void AmpfOff() { PinSetLo(VS_AMPF_GPIO, VS_AMPF_PIN); }
 #endif
     // Inner use
+    PinIrq_t IDreq {VS_GPIO, VS_DREQ, pudPullDown, this};
     thread_t *PThread;
-    void IrqDreqHandler();
+    void IIrqHandler() { chEvtSignalI(PThread, VS_EVT_DREQ_IRQ); }
     void ITask();
     void ISendNextData();
 };
@@ -210,6 +159,3 @@ public:
 extern Sound_t Sound;
 
 //#endif  // Sound Enabled
-
-#endif	/* MEDIA_H */
-

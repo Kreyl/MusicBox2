@@ -89,15 +89,14 @@ void App_t::PowerON() {
     SD.Init();      // No power delay
     // Sound
     Sound.AmpfOn();
-    Sound.Init();
-    Sound.RegisterAppThd(chThdGetSelfX());
+    Sound.Init(chThdGetSelfX());
     // LED
 //    Backlight.Init();
 //    Backlight.SetBrightness(0);
 //    Backlight.SetPwmFrequencyHz(1000);
 
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
-        SndList.PlayRandomFileFromDir("0:\\");
+        SndList.PlayRandomFileFromDir(PlayDir);
 //        Backlight.StartOrContinue(lsqFadeIn);
     }
     else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
@@ -112,7 +111,7 @@ void App_t::LoadSettings(const char* SettingsFileName) {
         Uart.Printf("WasInStandby\r");
         Sleep::DisableWakeupPin();
         Sleep::ClearStandbyFlag();
-        SndList.SetPreviousTrack(BackupSpc::ReadBackupRegister(TrackNumberBKP));
+        SndList.SetPreviousTrack(PlayDir, BackupSpc::ReadBackupRegister(TrackNumberBKP));
         Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
 //        Uart.Printf("\r Load TrackNumber: %u", BackupSpc::ReadBackupRegister(TrackNumberBKP));
         BackupSpc::DisableAccess();
@@ -162,7 +161,7 @@ while(true) {
     if(EvtMsk & EVT_PLAY_ENDS) {
         if (!ExternalPWR.IsHi()){
 //        if (!Periphy._5V_is_here()){
-            SndList.PlayRandomFileFromDir("0:\\");
+            SndList.PlayRandomFileFromDir(PlayDir);
         }
     }
 
@@ -231,7 +230,7 @@ while(true) {
             ShutDown();
         else{
             //        SD.Init();
-            SndList.PlayRandomFileFromDir("0:\\");
+            SndList.PlayRandomFileFromDir(PlayDir);
             Motor.Start();
 //            Backlight.StartOrContinue(lsqFadeIn);
         }
@@ -254,7 +253,7 @@ void App_t::OnCmd(Shell_t *PShell) {
         PShell->Ack(retvOk);
     }
     else if(PCmd->NameIs("Next")) {
-        SndList.PlayRandomFileFromDir("0:\\");
+        SndList.PlayRandomFileFromDir(PlayDir);
         PShell->Ack(retvOk);
     }
 
@@ -309,15 +308,16 @@ void App_t::ShutDown() {
 //        Motor.Sleep();
         Periphy.OFF();
         BackupSpc::EnableAccess();
-        BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber());
+        BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber(PlayDir));
         BackupSpc::WriteBackupRegister(VolumeBKP, Sound.GetVolume());
         Sleep::EnableWakeupPin();
         Sleep::EnterStandby();
         chSysUnlock();
     }
-    else
+    else {
         Motor.Start();
-//        SndList.PlayRandomFileFromDir("0:\\");
+        SndList.PlayRandomFileFromDir(PlayDir);
+    }
 }
 
 // Snsors

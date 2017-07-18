@@ -29,8 +29,9 @@
 #define VolumeBKP         1
 
 // Default Settings
+#define PlayDir           "0:\\"
+#define DEF_VolLevel      150
 #define DEF_MotorSpeed    -600  // 16 [об/мин * 0,1]
-#define DEF_VolLevel      220
 
 #if 1 // ========================== GPIO =======================================
 
@@ -67,6 +68,21 @@
 // Max. Slewing Frequency     1200 PPS
 // Pulse Per Second, т.е импульсов (шагов) за секунду (целых шагов или микрошагов)
 
+// ==== Sound VS1011 ====
+#define VS_GPIO         GPIOB
+// Pins
+#define VS_XCS          10
+#define VS_XDCS         11
+#define VS_RST          12
+#define VS_DREQ         2
+#define VS_XCLK         13
+#define VS_SO           14
+#define VS_SI           15
+// Amplifier
+#define VS_AMPF_EXISTS  TRUE
+#define VS_AMPF_GPIO    GPIOA
+#define VS_AMPF_PIN     15
+
 // Sensors
 #define Sensor1_Pin     GPIOB, 0, pudPullDown
 #define Sensor2_Pin     GPIOB, 1, pudPullDown
@@ -91,6 +107,8 @@
 #endif
 
 #if 1 // =========================== SPI =======================================
+#define VS_SPI          SPI2
+#define VS_AF           AF5
 #endif
 
 #if 1 // ========================== USART ======================================
@@ -131,6 +149,17 @@
 #if I2C_REQUIRED // ==== I2C ====
 
 #endif
+
+// ==== Sound VS1011 ====
+#define VS_DMA          STM32_DMA1_STREAM4
+#define VS_DMA_CHNL     0
+#define VS_DMA_MODE     STM32_DMA_CR_CHSEL(VS_DMA_CHNL) | \
+                        DMA_PRIORITY_LOW | \
+                        STM32_DMA_CR_MSIZE_BYTE | \
+                        STM32_DMA_CR_PSIZE_BYTE | \
+                        STM32_DMA_CR_DIR_M2P |    /* Direction is memory to peripheral */ \
+                        STM32_DMA_CR_TCIE         /* Enable Transmission Complete IRQ */
+
 
 #if ADC_REQUIRED
 /* DMA request mapped on this DMA channel only if the corresponding remapping bit is cleared in the SYSCFG_CFGR1
