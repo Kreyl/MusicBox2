@@ -184,12 +184,18 @@ void Sound_t::IPlayNew() {
 // ================================ Inner use ==================================
 void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
     VsCmd_t FCmd;
+    chSysLock();
     FCmd.OpCode = VS_WRITE_OPCODE;
     FCmd.Address = AAddr;
     FCmd.Data = __REV16(AData);
     // Add cmd to queue
-    chMBPost(&CmdBox, FCmd.Msg, TIME_INFINITE);
-    StartTransmissionIfNotBusy();
+    chMBPostI(&CmdBox, FCmd.Msg);
+    // StartTransmissionIfNotBusy:
+    if(IDmaIdle and IDreq.IsHi()) {
+        IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
+        IDreq.GenerateIrq();    // Do not call SendNexData directly because of its interrupt context
+    }
+    chSysUnlock();
 }
 
 void Sound_t::ISendNextData() {

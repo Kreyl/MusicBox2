@@ -1,12 +1,12 @@
-
+#include "sound.h"
 #include <string.h>
 #include "evt_mask.h"
-#include "sound.h"
-#include "kl_lib.h"
+#include "board.h"
+#include "main.h"
+
+//#if SOUND_ENABLED
 
 Sound_t Sound;
-Spi_t ISpi(VS_SPI);
-PinIrq_t IDreq(VS_GPIO, VS_DREQ, pudPullDown);
 
 // Mode register
 //#define VS_MODE_REG_VALUE   0x0802  // Native SDI mode, Layer I + II enabled
@@ -19,14 +19,25 @@ static const uint8_t SZero = 0;
 static uint8_t ReadWriteByte(uint8_t AByte);
 
 // ================================= IRQ =======================================
+// === EXTI IRQ Handler ===
+#if VS_DREQ == 0
+#define VS_IRQ_HANDLER    EXTI0_IRQHandler
+#elif VS_DREQ == 1
+#define VS_IRQ_HANDLER    EXTI1_IRQHandler
+#elif VS_DREQ == 2
+#define VS_IRQ_HANDLER    EXTI2_IRQHandler
+#elif VS_DREQ == 3
+#define VS_IRQ_HANDLER    EXTI3_IRQHandler
+#elif VS_DREQ == 4
+#define VS_IRQ_HANDLER    EXTI4_IRQHandler
+#endif
 extern "C" {
 // Dreq IRQ
 CH_IRQ_HANDLER(VS_IRQ_HANDLER) {
-//    Uart.PrintfNow("IRQ %d %d\r", ch.dbg.isr_cnt, ch.dbg.lock_cnt);
     CH_IRQ_PROLOGUE();
     chSysLockFromISR();
-    IDreq.CleanIrqFlag();
-    IDreq.DisableIrq();
+    Sound.IDreq.CleanIrqFlag();
+    Sound.IDreq.DisableIrq();
     chEvtSignalI(Sound.PThread, VS_EVT_DREQ_IRQ);
     chSysUnlockFromISR();
     CH_IRQ_EPILOGUE();
@@ -40,14 +51,14 @@ void SIrqDmaHandler(void *p, uint32_t flags) {
 } // extern c
 
 // =========================== Implementation ==================================
-static THD_WORKING_AREA(waSoundThread, 1024); // 512
-__attribute__((noreturn))
+static THD_WORKING_AREA(waSoundThread, 1024);
+__noreturn
 static void SoundThread(void *arg) {
     chRegSetThreadName("Sound");
     Sound.ITask();
 }
 
-__attribute__((noreturn))
+__noreturn
 void Sound_t::ITask() {
     while(true) {
         eventmask_t EvtMsk = chEvtWaitAny(ALL_EVENTS);
@@ -68,7 +79,7 @@ void Sound_t::ITask() {
 
         // Play new request
         if(EvtMsk & VS_EVT_COMPLETED) {
-//          Uart.Printf("\rComp");
+//        	Uart.Printf("\rComp");
             AddCmd(VS_REG_MODE, 0x0004);    // Soft reset
             if(IFilename != NULL) IPlayNew();
             else chEvtSignal(IPAppThd, EVT_PLAY_ENDS); // Raise event if nothing to play
@@ -195,7 +206,6 @@ void Sound_t::IPlayNew() {
 
 // ================================ Inner use ==================================
 void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
-//    Uart.PrintfNow(" %S\r", __FUNCTION__);
     VsCmd_t FCmd;
     chSysLock();
     FCmd.OpCode = VS_WRITE_OPCODE;
@@ -212,7 +222,7 @@ void Sound_t::AddCmd(uint8_t AAddr, uint16_t AData) {
 }
 
 void Sound_t::ISendNextData() {
-//    Uart.PrintfNow("SendNext\r");
+//    Uart.Printf("sn\r");
     IDreq.DisableIrq();
     dmaStreamDisable(VS_DMA);
     IDmaIdle = false;
@@ -266,7 +276,7 @@ void Sound_t::ISendNextData() {
         else SendZeroes();
     }
     else {
-//      Uart.PrintfI("\rI");
+//    	Uart.PrintfI("\rI");
         if(!IDreq.IsHi()) IDreq.EnableIrq(IRQ_PRIO_MEDIUM);
         else IDmaIdle = true;
     }
@@ -280,7 +290,7 @@ void Sound_t::PrepareToStop() {
 }
 
 void Sound_t::SendZeroes() {
-    //    Uart.Printf("sz\r");
+//    Uart.Printf("sz\r");
     XDCS_Lo();  // Start data transmission
     uint32_t FLength = (ZeroesCount > 32)? 32 : ZeroesCount;
     dmaStreamSetMemory0(VS_DMA, &SZero);
@@ -325,3 +335,5 @@ uint8_t Sound_t::CmdWrite(uint8_t AAddr, uint16_t AData) {
     XCS_Hi();                       // End transmission
     return retvOk;
 }
+
+//#endif // #if SOUND_ENABLED

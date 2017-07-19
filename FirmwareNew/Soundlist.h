@@ -32,12 +32,22 @@ private:
     FRESULT CountFilesInDir(const char* DirName, uint32_t *PCnt);
 public:
     void PlayRandomFileFromDir(const char* DirName);
+    FRESULT UpdateDir(const char* DirName) {
+        int indx = DirIndxInList(DirName);
+        DirList[indx].LastN = -1;
+        return CountFilesInDir(DirName, &DirList[indx].FilesCnt);
+    }
     int32_t GetTrackNumber(const char* DirName) {
         int indx = DirIndxInList(DirName);
         return DirList[indx].LastN;
     }
     void SetPreviousTrack(const char* DirName, int32_t N) {
         int indx = DirIndxInList(DirName);
+        if(indx == -1) {
+            indx = AddDirToList(DirName);
+            FRESULT Rslt = CountFilesInDir(DirName, &DirList[indx].FilesCnt);
+            if(Rslt != FR_OK) return;
+        }
         DirList[indx].LastN = N;
     }
 };

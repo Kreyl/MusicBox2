@@ -68,11 +68,12 @@ int main() {
     // Setup outputs
     Periphy.InitSwich();
 
+
     App.PowerON();
     // USB related
     MassStorage.Init();
 
-    App.LoadSettings("Settings.ini");
+
 //    FRESULT Rslt = f_open(&MyFile, "test.txt", FA_READ+FA_OPEN_EXISTING);
 //    Uart.Printf("Rslt: %u\r", Rslt);
 
@@ -88,12 +89,12 @@ void App_t::PowerON() {
     Motor.Init(pdNoDelay);
     SD.Init();      // No power delay
     // Sound
-    Sound.AmpfOn();
     Sound.Init(chThdGetSelfX());
     // LED
 //    Backlight.Init();
 //    Backlight.SetBrightness(0);
 //    Backlight.SetPwmFrequencyHz(1000);
+    App.LoadSettings("Settings.ini");
 
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
         SndList.PlayRandomFileFromDir(PlayDir);
@@ -112,8 +113,8 @@ void App_t::LoadSettings(const char* SettingsFileName) {
         Sleep::DisableWakeupPin();
         Sleep::ClearStandbyFlag();
         SndList.SetPreviousTrack(PlayDir, BackupSpc::ReadBackupRegister(TrackNumberBKP));
-        Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
 //        Uart.Printf("\r Load TrackNumber: %u", BackupSpc::ReadBackupRegister(TrackNumberBKP));
+        Sound.SetVolume(BackupSpc::ReadBackupRegister(VolumeBKP));
         BackupSpc::DisableAccess();
     }
     else {
@@ -229,7 +230,7 @@ while(true) {
         if (!Box1Opened.IsHi() and !Box2Opened.IsHi())
             ShutDown();
         else{
-            //        SD.Init();
+            SndList.UpdateDir(PlayDir);
             SndList.PlayRandomFileFromDir(PlayDir);
             Motor.Start();
 //            Backlight.StartOrContinue(lsqFadeIn);
@@ -295,8 +296,8 @@ void App_t::OnCmd(Shell_t *PShell) {
 
 
 void App_t::ShutDown() {
-//    Sound.Shutdown();
     Sound.Stop();
+    Sound.Shutdown();
     Motor.Stop();
     chThdSleepMilliseconds(700);
 //    if (!WKUPpin.IsHi()){
