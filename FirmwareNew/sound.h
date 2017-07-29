@@ -124,6 +124,7 @@ private:
     const char* IFilename;
     uint32_t IStartPosition;
     thread_t *IPAppThd;
+    eventmask_t EvtEnd;
     // Pin operations
     inline void Rst_Lo()   { PinSetLo(VS_GPIO, VS_RST); }
     inline void Rst_Hi()   { PinSetHi(VS_GPIO, VS_RST); }
@@ -149,7 +150,11 @@ private:
     void IPlayNew();
 public:
     sndState_t State;
-    void Init(thread_t *APThread);
+    void Init();
+    void SetupSeqEndEvt(eventmask_t AEvt) {
+        IPAppThd = chThdGetSelfX();
+        EvtEnd = AEvt;
+    }
     void Shutdown();
     void Play(const char* AFilename, uint32_t StartPosition = 0) {
         IFilename = AFilename;

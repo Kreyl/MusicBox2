@@ -71,7 +71,7 @@ void Sound_t::ITask() {
 //          Uart.Printf("\rComp");
             AddCmd(VS_REG_MODE, 0x0004);    // Soft reset
             if(IFilename != NULL) IPlayNew();
-            else chEvtSignal(IPAppThd, EVT_PLAY_ENDS); // Raise event if nothing to play
+            else if(IPAppThd != nullptr) chEvtSignal(IPAppThd, EvtEnd); // Raise event if nothing to play
         }
         // Stop request
         else if(EvtMsk & VS_EVT_STOP) {
@@ -96,8 +96,7 @@ void Sound_t::ITask() {
     } // while true
 }
 
-void Sound_t::Init(thread_t *APThread) {
-    IPAppThd = APThread;
+void Sound_t::Init() {
     // ==== GPIO init ====
     PinSetupOut(VS_GPIO, VS_RST, omPushPull);
     PinSetupOut(VS_GPIO, VS_XCS, omPushPull);

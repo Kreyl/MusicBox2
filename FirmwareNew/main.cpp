@@ -89,7 +89,8 @@ void App_t::PowerON() {
     Motor.Init(pdNoDelay);
     SD.Init();      // No power delay
     // Sound
-    Sound.Init(chThdGetSelfX());
+    Sound.Init();
+    Sound.SetupSeqEndEvt(EVT_PLAY_ENDS);
     // LED
 //    Backlight.Init();
 //    Backlight.SetBrightness(0);
