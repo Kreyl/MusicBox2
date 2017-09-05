@@ -8,7 +8,7 @@
 #include "SteppingMotor.h"
 
 void StepperTmrCallback(void *p) {
-    reinterpret_cast<SteppingMotor_t*>(p)->StepperTmrCallbacHandler();
+    reinterpret_cast<SteppingMotor_t*>(p)->StepperTmrCallbakHandler();
 }
 
 
@@ -23,17 +23,17 @@ void SteppingMotor_t::SetSpeed(int32_t Speed, const StepMode_t Mode = smLikeBefo
         switch(MotorMode) {
             case smFullStep:
                 Steps_CNT = 3;
-                StepInterval = (uint32_t)(1000*60*StepAngle*10)/(360 * GearRatio * Speed);
+                StepInterval_ms = (uint32_t)(1000*60*StepAngle*10)/(360 * GearRatio * Speed);
                 break;
             case smHalftep:
                 Steps_CNT = 7;
-                StepInterval = (uint32_t)(1000*60*StepAngle*5)/(360 * GearRatio * Speed);
+                StepInterval_ms = (uint32_t)(1000*60*StepAngle*5)/(360 * GearRatio * Speed);
                 break;
             default: break;
         }         // обороты в минуту /10 -> интервал между шагами [mS]
     }
-    if (StepInterval == 0) StepInterval = 1;
-    Uart.Printf("Step Interval %u mS\r", StepInterval);
+    if (StepInterval_ms == 0) StepInterval_ms = 1;
+    Uart.Printf("Step Interval %u mS\r", StepInterval_ms);
 }
 
 void SteppingMotor_t::TaskI() {

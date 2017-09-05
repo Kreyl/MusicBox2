@@ -41,7 +41,7 @@ class SteppingMotor_t {
 private:
     virtual_timer_t StepTMR;
     uint8_t StepIndex = 0;
-    systime_t StepInterval = 30;
+    systime_t StepInterval_ms = 30;
     uint8_t Steps_CNT = 3;
     StepMode_t MotorMode = smFullStep;
     Rotation_t Rotation = srClockwise;
@@ -53,7 +53,7 @@ private:
 
     void StepperTmrStsrtI(){
         if(chVTIsArmedI(&StepTMR)) chVTResetI(&StepTMR);
-        chVTSetI(&StepTMR, MS2ST(StepInterval), StepperTmrCallback, this);
+        chVTSetI(&StepTMR, MS2ST(StepInterval_ms), StepperTmrCallback, this);
     }
     void TaskI();
 
@@ -61,12 +61,6 @@ public:
     SteppingMotor_t(MotorSetupPins_t AMotor, uint8_t APinSHDN, uint8_t AStepAngle, uint16_t AGearRatio) :
         IMotor(AMotor), PinSHDN(APinSHDN), StepAngle(AStepAngle), GearRatio(AGearRatio) {}
 
-    void StepperTmrCallbacHandler() {
-        chSysLockFromISR();
-        StepperTmrStsrtI();
-        TaskI();
-        chSysUnlockFromISR();
-    }
     void Init(const PowerDelay_t Delay = pdDelay) {
         PinSetupOut(IMotor.PGpio, IMotor.PinA1, omPushPull);
         PinSetupOut(IMotor.PGpio, IMotor.PinA2, omPushPull);
@@ -86,10 +80,10 @@ public:
         int32_t Result = 0;
         switch(MotorMode) {
             case smFullStep:
-                Result = (uint32_t)(1000*60*StepAngle*10)/(360 * GearRatio * StepInterval);
+                Result = (uint32_t)(1000*60*StepAngle*10)/(360 * GearRatio * StepInterval_ms);
                 break;
             case smHalftep:
-                Result = (uint32_t)(1000*60*StepAngle*5)/(360 * GearRatio * StepInterval);
+                Result = (uint32_t)(1000*60*StepAngle*5)/(360 * GearRatio * StepInterval_ms);
                 break;
             default: break;
         }
@@ -107,6 +101,13 @@ public:
     void Sleep() {
         Stop();
         PinSetLo(IMotor.PGpio, PinSHDN);
+    }
+    // Inner use
+    void StepperTmrCallbakHandler() {
+        chSysLockFromISR();
+        StepperTmrStsrtI();
+        TaskI();
+        chSysUnlockFromISR();
     }
 };
 

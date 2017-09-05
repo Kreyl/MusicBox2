@@ -41,11 +41,10 @@ public:
     }
     void SignalEvtI(eventmask_t Evt) { chEvtSignalI(PThread, Evt); }
     void OnCmd(Shell_t *PShell);
-    // Inner use
-
     void PowerON();
     void LoadSettings(const char* FileName);
     void ShutDown();
+    // Inner use
     void ITask();
 };
 extern App_t App;
