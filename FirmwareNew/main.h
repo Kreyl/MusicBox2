@@ -17,21 +17,13 @@
 #include "ff.h"
 #include "kl_fs_utils.h"
 #include "MassStorage.h"
-#include "kl_adc.h"
 #include "battery_consts.h"
 #include "board.h"
 
 
-//enum AppState_t  {
-//    asDefault,
-//};
-
 class App_t {
 private:
     thread_t *PThread; // Main thread
-//    void EnterState(AppState_t NewState);
-//    AppState_t SystemState = asDefault;
-
 public:
     void InitThread() { PThread = chThdGetSelfX(); }
     void SignalEvt(uint32_t EvtMsk) {
@@ -40,10 +32,10 @@ public:
         chSysUnlock();
     }
     void SignalEvtI(eventmask_t Evt) { chEvtSignalI(PThread, Evt); }
+#if UART_RX_ENABLED
     void OnCmd(Shell_t *PShell);
-    void PowerON();
+#endif
     void LoadSettings(const char* FileName);
-    void ShutDown();
     // Inner use
     void ITask();
 };

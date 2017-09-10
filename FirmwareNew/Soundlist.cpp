@@ -74,7 +74,7 @@ void SndList_t::PlayRandomFileFromDir(const char* DirName) {
                             Filename[Len] = '/';
                         }
                         strcpy(&Filename[Len+1], FName);
-                        Uart.Printf("%S  N=%u\r", FName, Counter);
+//                        Uart.Printf("%S  N=%u\r", FName, Counter);
                         Sound.Play(Filename);
                         return;
                     }

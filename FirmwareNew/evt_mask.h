@@ -19,8 +19,7 @@
 
 #define EVT_BOX1_CLOSED         EVENT_MASK(10)
 #define EVT_BOX2_CLOSED         EVENT_MASK(11)
-#define EVT_TMR_BigVolUp        EVENT_MASK(12)
-#define EVT_TMR_BigVolDown      EVENT_MASK(13)
+#define EVT_DIAL_REDY           EVENT_MASK(12)
 
 
 #endif /* EVT_MASK_H_ */

@@ -31,6 +31,13 @@ static systime_t LongPressTimer;
 static bool IsRepeating[BUTTONS_CNT];
 static systime_t RepeatTimer;
 #endif
+#if BTN_CLICK || BTN_DOUBLE_CLICK
+static systime_t ClickTimer;
+#endif
+#if BTN_DOUBLE_CLICK
+static bool IsDoubleClicking[BUTTONS_CNT];
+static systime_t DoubleClickTimer;
+#endif
 #if BTN_COMBO
     bool IsCombo;
 #endif
@@ -74,20 +81,32 @@ void ProcessButtons(PinSnsState_t *BtnState, uint32_t Len) {
             else IsCombo = false;
 #endif // combo
 
-#if BTN_SHORTPRESS // Single key pressed, no combo
-            AddEvtToQueue(beShortPress, i);  // Add single keypress
+#if BTN_CLICK || BTN_DOUBLE_CLICK
+            ClickTimer = chVTGetSystemTimeX();
+#endif
+#if BTN_DOUBLE_CLICK
+            if(chVTTimeElapsedSinceX(DoubleClickTimer) <= MS2ST(BTN_CLICK_DELAY_MS)) {
+                IsDoubleClicking[i] = true;
+            }
 #endif
 
+#if BTN_SHORTPRESS // Single key pressed, no combo
+#if BTN_DOUBLE_CLICK
+            if (!IsDoubleClicking[i])
+#endif
+                AddEvtToQueue(beShortPress, i);  // Add single keypress
+#endif
 #if BTN_LONGPRESS
             LongPressTimer = chVTGetSystemTimeX();
 #endif
+
 #if BTN_REPEAT
             RepeatTimer = chVTGetSystemTimeX();
 #endif
         } // if press
 
         // ==== Button Release ====
-#if BTN_COMBO || BTN_RELEASE
+#if BTN_COMBO || BTN_RELEASE || BTN_CLICK || BTN_DOUBLE_CLICK
         else if(BtnState[i] == BTN_RELEASING_STATE) {
 #if BTN_COMBO // Check if combo completely released
             if(IsCombo) {
@@ -101,6 +120,25 @@ void ProcessButtons(PinSnsState_t *BtnState, uint32_t Len) {
                 continue; // do not send release evt (if enabled)
             } // if combo
 #endif
+
+#if BTN_CLICK || BTN_DOUBLE_CLICK
+            if(chVTTimeElapsedSinceX(ClickTimer) <= MS2ST(BTN_CLICK_DELAY_MS)) {
+#if BTN_DOUBLE_CLICK
+                if (!IsDoubleClicking[i])
+                    DoubleClickTimer = chVTGetSystemTimeX();
+                else {
+                    IsDoubleClicking[i] = false;
+                    AddEvtToQueue(beDoubleClick, i);
+                    continue; // do not send release evt (if enabled)
+                }
+#endif
+#if BTN_CLICK
+                AddEvtToQueue(beClick, i);
+                continue; // do not send release evt (if enabled)
+#endif
+            }
+#endif
+
 #if BTN_RELEASE // Send evt if not combo
             AddEvtToQueue(beRelease, i);
 #endif

@@ -31,6 +31,7 @@ const PinSns_t PinSns[] = {
         // Button
         {BTN_VolUp_pin, ProcessButtons},
         {BTN_VolDown_pin, ProcessButtons},
+        {BTN_User_pin, ProcessButtons},
         // 5V sns
         {ExternalPWR_Pin, Process5VSns},
         {Sensor1_Pin, Process3VSns1},

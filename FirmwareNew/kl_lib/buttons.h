@@ -17,30 +17,34 @@
 
 /*
  * Example:
-if(Evt & EVT_BUTTONS) {
-    BtnEvtInfo_t EInfo;
-    while(BtnGetEvt(&EInfo) == OK) {
-        if(EInfo.Type == bePress) {
+        if(Evt & EVT_BUTTONS) {
+            BtnEvtInfo_t EInfo;
+            while(BtnGetEvt(&EInfo) == retvOk) {
+                if(EInfo.Type == beShortPress) {
 
-        }
-        else if(EInfo.Type == beLongPress) {
+                }
+                else if(EInfo.Type == beLongPress) {
 
+                }
+            }
         }
-    }
  */
 
 // ================================= Settings ==================================
 //#define BUTTONS_CNT                 1
 // Select required events etc.
-#define BTN_SHORTPRESS              TRUE   // beShortPress evt
+#define BTN_SHORTPRESS              TRUE    // beShortPress evt
 #define BTN_RELEASE                 FALSE
-#define BTN_LONGPRESS               FALSE    // Send LongPress evt
-#define BTN_REPEAT                  TRUE   // Send Repeat evt
+#define BTN_LONGPRESS               FALSE   // Send LongPress evt
+#define BTN_REPEAT                  TRUE    // Send Repeat evt
 #define BTN_COMBO                   FALSE   // Allow combo
+#define BTN_CLICK                   FALSE
+#define BTN_DOUBLE_CLICK            FALSE
 #define BTN_GETSTATE_REQUIRED       FALSE
 
-#define BTN_REPEAT_PERIOD_MS        650
+#define BTN_REPEAT_PERIOD_MS        450
 #define BTN_LONGPRESS_DELAY_MS      1000
+#define BTN_CLICK_DELAY_MS          600 // 800
 #define BTN_DELAY_BEFORE_REPEAT_MS  (BTN_REPEAT_PERIOD_MS + BTN_LONGPRESS_DELAY_MS)
 
 #if BTN_COMBO
@@ -71,7 +75,7 @@ enum BtnName_t {btnUp=0, btnDown=1};
 
 // ==== Types ==== Do not touch
 // BtnEvent: contains info about event type, count of participating btns and array with btn IDs
-enum BtnEvt_t {beShortPress, beLongPress, beRelease, beCancel, beRepeat, beCombo};
+enum BtnEvt_t {beShortPress, beLongPress, beRelease, beCancel, beRepeat, beCombo, beClick, beDoubleClick};
 struct BtnEvtInfo_t {
     BtnEvt_t Type;
 #if BTN_COMBO

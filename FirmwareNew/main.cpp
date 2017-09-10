@@ -7,16 +7,18 @@
  */
 
 #include "main.h"
-#include "sound.h"
-#include "Soundlist.h"
 #include "SimpleSensors.h"
 #include "buttons.h"
+#include "kl_adc.h"
 #include "led.h"
 #include "Sequences.h"
+#include "sound.h"
+#include "Soundlist.h"
 #include "SteppingMotor.h"
-//#include "WS2812BforSPI.h"
-//#include "WS2812BforTMR.h"
+#include "ws2812b.h"
+#include "RotaryDial.h"
 
+#if 1 // ======================== Variables and defines ========================
 App_t App;
 SndList_t SndList;
 Periphy_t Periphy;
@@ -27,9 +29,20 @@ PinInput_t Box2Opened(Sensor2_Pin);
 PinOutput_t BattMeasureSW(BattMeasSW_Pin);
 SteppingMotor_t Motor(MotorPins, MotorSHDN, MotorAngle, MotorRatio);
 LedSmooth_t Backlight(LED_PIN);
+//Dialer_t Dialer;
+
+enum AppState_t {
+    asOff,
+};
+AppState_t State = asOff;
+
+void BtnHandler(BtnEvt_t BtnEvt, uint8_t BtnID);
+void WakeUp();
+void ShutDown();
+
+#endif
 
 // =============================== Main ========================================
-FIL MyFile;
 
 int main() {
     // ==== Init ====
@@ -68,21 +81,21 @@ int main() {
     // Setup outputs
     Periphy.InitSwich();
 
-
-    App.PowerON();
+    WakeUp();
     // USB related
     MassStorage.Init();
 
-
-//    FRESULT Rslt = f_open(&MyFile, "test.txt", FA_READ+FA_OPEN_EXISTING);
-//    Uart.Printf("Rslt: %u\r", Rslt);
+#if defined Phone
+    Dialer.Init();
+    Dialer.SetupSeqEndEvt(EVT_DIAL_REDY);
+#endif
 
     // ==== Main cycle ====
     App.ITask();
 }
 
 
-void App_t::PowerON() {
+void WakeUp() {
     Periphy.ON();
     chThdSleepMilliseconds(200);    // Let power to stabilize
     // Stepping Motor
@@ -101,7 +114,7 @@ void App_t::PowerON() {
         SndList.PlayRandomFileFromDir(PlayDir);
 //        Backlight.StartOrContinue(lsqFadeIn);
     }
-    else if (ExternalPWR.IsHi()) SignalEvt(EVT_USB_CONNECTED);
+    else if (ExternalPWR.IsHi()) App.SignalEvt(EVT_USB_CONNECTED);
     else ShutDown();
 }
 
@@ -146,18 +159,7 @@ void App_t::LoadSettings(const char* SettingsFileName) {
 
 __attribute__ ((__noreturn__))
 void App_t::ITask() {
-
-#if 0 // Создать файл (проба)
-    FIL File;
-    FRESULT Rslt = f_open(&File, "ID_Store.ini",FA_READ+FA_OPEN_EXISTING+FA_CREATE_NEW);
-    if(Rslt != FR_OK) {
-        if (Rslt == FR_NO_FILE) Uart.Printf("\r%S: not found", "ID_Store.ini");
-        else Uart.Printf("\r%S: openFile error: %u", "ID_Store.ini", Rslt);
-     }
-#endif
-
 while(true) {
-//    eventmask_t EvtMsk = chEvtWaitAnyTimeout(EVT_PLAY_ENDS, MS2ST(306));
     eventmask_t EvtMsk = chEvtWaitAny(ALL_EVENTS);
 
     if(EvtMsk & EVT_PLAY_ENDS) {
@@ -168,24 +170,8 @@ while(true) {
     }
 
     if(EvtMsk & EVT_BUTTONS) {
-//        Uart.Printf("BtnsEvt\r");
         BtnEvtInfo_t EInfo;
-        while(BtnGetEvt(&EInfo) == retvOk) {
-            if(EInfo.Type == beShortPress) {
-//                Uart.Printf("Btn %u press\r", EInfo.BtnID);
-                switch(EInfo.BtnID) {
-                    case VolUpIndex: Sound.VolumeIncrease(); break;
-                    case VolDownIndex: Sound.VolumeDecrease(); break;
-                }
-            }
-            else if(EInfo.Type == beRepeat) {
-//                Uart.Printf("Btn %u repeat\r", EInfo.BtnID);
-                switch(EInfo.BtnID) {
-                    case VolUpIndex:   Sound.VolumeIncreaseBig(); break;
-                    case VolDownIndex: Sound.VolumeDecreaseBig(); break;
-                }
-            }
-        }
+        while(BtnGetEvt(&EInfo) == retvOk) BtnHandler(EInfo.Type, EInfo.BtnID);
     }
 
     if(EvtMsk & EVT_BOX1_CLOSED) {
@@ -198,6 +184,12 @@ while(true) {
             ShutDown();
         }
     }
+
+#if defined Phone
+    if(EvtMsk & EVT_DIAL_REDY) {
+        Uart.Printf("  Namber %u\r", Dialer.GetNamber());
+    }
+#endif
 
     if(EvtMsk & EVT_ADC_DONE) {
         uint16_t BatAdc = 2 * (Adc.GetResult(BAT_CHNL) - CallConst); // to count R divider
@@ -244,65 +236,37 @@ while(true) {
     }
 
     } // while true
+} // App_t::ITask()
+
+void BtnHandler(BtnEvt_t BtnEvt, uint8_t BtnID) {
+//    if(BtnEvt == beShortPress) Uart.Printf("Btn %u Short\r", BtnID);
+//    if(BtnEvt == beLongPress)  Uart.Printf("Btn %u Long\r", BtnID);
+//    if(BtnEvt == beRelease)    Uart.Printf("Btn %u Release\r", BtnID);
+    if(BtnEvt == beRepeat)    Uart.Printf("Btn %u Repeat\r", BtnID);
+//    if(BtnEvt == beClick)      Uart.Printf("Btn %u Click\r", BtnID);
+//    if(BtnEvt == beDoubleClick)Uart.Printf("Btn %u DoubleClick\r", BtnID);
+
+    if(BtnEvt == beShortPress) {
+        switch(BtnID) {
+            case VolUpIndex: Sound.VolumeIncrease(); break;
+            case VolDownIndex: Sound.VolumeDecrease(); break;
+        }
+    }
+    else if(BtnEvt == beRepeat) {
+        switch(BtnID) {
+            case VolUpIndex:   Sound.VolumeIncreaseBig(); break;
+            case VolDownIndex: Sound.VolumeDecreaseBig(); break;
+        }
+    }
 }
 
-void App_t::OnCmd(Shell_t *PShell) {
-    Cmd_t *PCmd = &PShell->Cmd;
-    __attribute__((unused)) int32_t Data = 0;  // May be unused in some configurations
-    Uart.Printf("\r New Cmd: %S\r", PCmd->Name);
-    // Handle command
-    if(PCmd->NameIs("Ping")) {
-        PShell->Ack(retvOk);
-    }
-    else if(PCmd->NameIs("Next")) {
-        SndList.PlayRandomFileFromDir(PlayDir);
-        PShell->Ack(retvOk);
-    }
-
-    else if(PCmd->NameIs("PerON")) {
-        PowerON();
-        PShell->Ack(retvOk);
-    }
-    else if(PCmd->NameIs("PerOFF")) {
-        Sound.Shutdown();
-        Periphy.OFF();
-        PShell->Ack(retvOk);
-    }
-
-    else if(PCmd->NameIs("MotorSetF")) {
-        if(PCmd->GetNextInt32(&Data) == retvOk) {
-            Uart.Printf("Data=%d\r ", Data);
-            Motor.SetSpeed(Data, smFullStep);
-        }
-        PShell->Ack(retvOk);
-    }
-    else if(PCmd->NameIs("MotorSetH")) {
-        if(PCmd->GetNextInt32(&Data) == retvOk) {
-            Uart.Printf("Data=%d\r ", Data);
-            Motor.SetSpeed(Data, smHalftep);
-        }
-        PShell->Ack(retvOk);
-    }
-    else if(PCmd->NameIs("MotorStart")) {
-        Motor.Start();
-        PShell->Ack(retvOk);
-    }
-    else if(PCmd->NameIs("MotorStop")) {
-        Motor.Stop();
-        PShell->Ack(retvOk);
-    }
-
-    else PShell->Ack(retvCmdUnknown);
-}
-
-
-void App_t::ShutDown() {
+void ShutDown() {
     Sound.Stop();
-    Sound.Shutdown();
     Motor.Stop();
     chThdSleepMilliseconds(700);
 //    if (!WKUPpin.IsHi()){
     if (!Box1Opened.IsHi() and !Box2Opened.IsHi() and !ExternalPWR.IsHi()){
+        Sound.Shutdown();
         chSysLock();
         Uart.PrintfNow("Sleep\r\r");
         Sound.Shutdown();
@@ -336,3 +300,54 @@ void Process3VSns2(PinSnsState_t *PState, uint32_t Len) {
 //    Uart.Printf("  %S\r", __FUNCTION__);
     if(PState[0] == pssFalling) App.SignalEvt(EVT_BOX2_CLOSED);
 }
+
+#if UART_RX_ENABLED // ================= Command processing ====================
+void App_t::OnCmd(Shell_t *PShell) {
+    Cmd_t *PCmd = &PShell->Cmd;
+    __attribute__((unused)) int32_t Data = 0;  // May be unused in some configurations
+//    Uart.Printf("\r New Cmd: %S\r", PCmd->Name);
+    // Handle command
+    if(PCmd->NameIs("Ping")) {
+        PShell->Ack(retvOk);
+    }
+    else if(PCmd->NameIs("Next")) {
+        SndList.PlayRandomFileFromDir(PlayDir);
+        PShell->Ack(retvOk);
+    }
+
+    else if(PCmd->NameIs("PerON")) {
+        WakeUp();
+        PShell->Ack(retvOk);
+    }
+    else if(PCmd->NameIs("PerOFF")) {
+        Sound.Shutdown();
+        Periphy.OFF();
+        PShell->Ack(retvOk);
+    }
+
+    else if(PCmd->NameIs("MotorSetF")) {
+        if(PCmd->GetNextInt32(&Data) == retvOk) {
+            Uart.Printf("Data=%d\r ", Data);
+            Motor.SetSpeed(Data, smFullStep);
+        }
+        PShell->Ack(retvOk);
+    }
+    else if(PCmd->NameIs("MotorSetH")) {
+        if(PCmd->GetNextInt32(&Data) == retvOk) {
+            Uart.Printf("Data=%d\r ", Data);
+            Motor.SetSpeed(Data, smHalftep);
+        }
+        PShell->Ack(retvOk);
+    }
+    else if(PCmd->NameIs("MotorStart")) {
+        Motor.Start();
+        PShell->Ack(retvOk);
+    }
+    else if(PCmd->NameIs("MotorStop")) {
+        Motor.Stop();
+        PShell->Ack(retvOk);
+    }
+
+    else PShell->Ack(retvCmdUnknown);
+}
+#endif

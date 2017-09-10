@@ -103,7 +103,7 @@ void Sound_t::Init() {
     PinSetupOut(VS_GPIO, VS_XDCS, omPushPull);
     XCS_Hi();
     XDCS_Hi();
-    PinSetupInput(VS_GPIO, VS_DREQ, pudPullDown);
+//    PinSetupInput(VS_GPIO, VS_DREQ, pudPullDown);
     PinSetupAlterFunc(VS_GPIO, VS_XCLK, omPushPull, pudNone, VS_AF);
     PinSetupAlterFunc(VS_GPIO, VS_SO,   omPushPull, pudNone, VS_AF);
     PinSetupAlterFunc(VS_GPIO, VS_SI,   omPushPull, pudNone, VS_AF);
