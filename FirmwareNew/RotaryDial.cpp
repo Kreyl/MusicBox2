@@ -8,6 +8,7 @@
 #include "RotaryDial.h"
 
 Dial_t Dialer;
+PinIrq_t DialIRQ(Dial_Namber_GPIO, Dial_Namber_PIN, pudPullUp);
 
 void LockTmrCallback(void *p) {
     chSysLockFromISR();

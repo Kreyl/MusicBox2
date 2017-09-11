@@ -36,7 +36,7 @@ LedSmooth_t Backlight(LED_PIN);
 //Dialer_t Dialer;
 
 enum AppState_t {
-    asOff,
+    asOff, asBeep, asPlay,
 };
 AppState_t State = asOff;
 
@@ -92,6 +92,8 @@ int main() {
 #if defined Phone
     Dialer.Init();
     Dialer.SetupSeqEndEvt(EVT_DIAL_REDY);
+    State = asBeep;
+    Sound.Play("Sys/beep_8.mp3");
 #endif
 
     // ==== Main cycle ====
@@ -169,7 +171,19 @@ while(true) {
     if(EvtMsk & EVT_PLAY_ENDS) {
         if (!ExternalPWR.IsHi()){
 //        if (!Periphy._5V_is_here()){
+#if defined MusicBox
             SndList.PlayRandomFileFromDir(PlayDir);
+#elif defined Phone
+            switch(State) {
+                case asBeep:
+                    SndList.PlayRandomFileFromDir(PlayDir);
+                    break;
+                case asPlay:
+                    Sound.Play("Sys/busy.mp3");
+                    break;
+                default: break;
+            }
+#endif
         }
     }
 
@@ -191,14 +205,17 @@ while(true) {
 
 #if defined Phone
     if(EvtMsk & EVT_DIAL_REDY) {
-        switch(Dialer.GetNumber()) {
-            case 103:
-            case 03:
-                SndList.PlayRandomFileFromDir(Dir_03);
-            break;
-            default:
-                SndList.PlayRandomFileFromDir(Dir_Any);
-                break;
+        if (!ExternalPWR.IsHi()){
+            State = asPlay;
+            switch(Dialer.GetNumber()) {
+                case 103:
+                case 03:
+                    SndList.PlayRandomFileFromDir(Dir_03);
+                    break;
+                default:
+                    SndList.PlayRandomFileFromDir(Dir_Any);
+                    break;
+            }
         }
     }
 #endif

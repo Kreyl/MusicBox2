@@ -22,7 +22,10 @@
 #define DIAL_IRQ_HANDLER  Vector64
 #elif Dial_Namber_PIN == 4
 #define DIAL_IRQ_HANDLER  Vector68
+#else
+#error "RotaryDial.h: not selected IRQ pin"
 #endif
+
 
 #define IRQ_En_Delay_MS         20
 #define Disk_Poll_Period_MS     100
@@ -52,8 +55,6 @@ private:
         Numeral = 0;
     }
 public:
-
-    PinIrq_t DialIRQ(Dial_Namber_GPIO, Dial_Namber_PIN, pudPullUp);
     void Init();
     void SetupSeqEndEvt(eventmask_t AEvt) {
         IPAppThd = chThdGetSelfX();
