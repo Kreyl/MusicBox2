@@ -7,28 +7,27 @@
 
 #include "RotaryDial.h"
 
-Dialer_t Dialer;
-PinIrq_t DialIRQ(Dial_Namber_GPIO, Dial_Namber_PIN, pudPullUp);
+Dial_t Dialer;
 
 void LockTmrCallback(void *p) {
     chSysLockFromISR();
-    ((Dialer_t*)p)->IProcessSequenceI(deUnlockIRQ);
+    ((Dial_t*)p)->IProcessSequenceI(deUnlockIRQ);
     chSysUnlockFromISR();
 }
 void DiskTmrCallback(void *p) {
     chSysLockFromISR();
-    ((Dialer_t*)p)->IProcessSequenceI(deDiskPoll);
+    ((Dial_t*)p)->IProcessSequenceI(deDiskPoll);
     chSysUnlockFromISR();
 }
 void SendEvtTmrCallback(void *p) {
     chSysLockFromISR();
-    ((Dialer_t*)p)->IProcessSequenceI(deSendEvt);
+    ((Dial_t*)p)->IProcessSequenceI(deSendEvt);
     chSysUnlockFromISR();
 }
 
 // ================================= IRQ =======================================
 extern "C" {
-// Dreq IRQ
+// IRQ
 CH_IRQ_HANDLER(DIAL_IRQ_HANDLER) {
 //    Uart.PrintfNow("IRQ %d %d\r", ch.dbg.isr_cnt, ch.dbg.lock_cnt);
     CH_IRQ_PROLOGUE();
@@ -38,17 +37,17 @@ CH_IRQ_HANDLER(DIAL_IRQ_HANDLER) {
     CH_IRQ_EPILOGUE();
 }
 } // extern c
-void Dialer_t::IIrqPinHandler() {   // Interrupt caused by Low level on IRQ_Pin
+void Dial_t::IIrqPinHandler() {     // Interrupt caused by Low level on IRQ_Pin
     DialIRQ.CleanIrqFlag();         // Clear IRQ Pending Bit
     DialIRQ.DisableIrq();           // Disable IRQ
-    Namber ++;
-//    Uart.PrintfI("  IRQ nam %u\r", Namber);
+    Numeral ++;
+//    Uart.PrintfI("  IRQ nam %u\r", Numeral);
     chVTSetI(&LockTmr, MS2ST(IRQ_En_Delay_MS), LockTmrCallback, this);
 }
 
 // =========================== Implementation ==================================
 
-void Dialer_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
+void Dial_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
     switch(DialerEvt) {
         case deUnlockIRQ:
             DialIRQ.EnableIrq(IRQ_PRIO_LOW);
@@ -61,7 +60,8 @@ void Dialer_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
             } else if (!DiskIsArmed() and DiskWasArmed) {
                 DiskWasArmed = false;
 //                Uart.PrintfI("  Disk was armed\r");
-                chVTSetI(&SendEvtTmr, MS2ST(EndNamber_TimeOut_MS), SendEvtTmrCallback, this);
+                CalculateNumber();
+                chVTSetI(&SendEvtTmr, MS2ST(EndNumber_TimeOut_MS), SendEvtTmrCallback, this);
             }
             chVTSetI(&DiskTmr, MS2ST(Disk_Poll_Period_MS), DiskTmrCallback, this);
             break;
@@ -72,7 +72,7 @@ void Dialer_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
     }
 }
 
-void Dialer_t::Init() {
+void Dial_t::Init() {
     DialIRQ.Init(ttRising);
     PinSetupInput(Dial_Disk_GPIO, Dial_Disk_PIN, pudPullUp);
     chSysLock();

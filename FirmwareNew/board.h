@@ -10,23 +10,25 @@
 #include <inttypes.h>
 
 // ==== General ====
-#define BOARD_NAME          "MusicBox2_v2.2"
+#define BOARD_NAME      "MusicBox2_v2.2"
 //#define MusicBox
 #define Phone
 
 // Default Settings
 #if defined MusicBox
-#define APP_NAME            "MusicBox"
+#define APP_NAME        "MusicBox"
 #elif defined Phone
-#define APP_NAME            "Phone"
+#define APP_NAME        "Phone"
+#define Dir_03          "03"
+#define Dir_Any         "Any"
 #endif
-#define PlayDir           "0:\\"
-#define DEF_VolLevel      170
-#define DEF_MotorSpeed    -600  // 16 [об/мин * 0,1]
+#define PlayDir         "0:\\"
+#define DEF_VolLevel    170
+#define DEF_MotorSpeed  -600  // 16 [об/мин * 0,1]
 
 // Backup Registers
-#define TrackNumberBKP    0
-#define VolumeBKP         1
+#define TrackNumberBKP  0
+#define VolumeBKP       1
 
 // MCU type as defined in the ST header.
 #define STM32F205xx

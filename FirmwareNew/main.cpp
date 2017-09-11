@@ -25,7 +25,11 @@ Periphy_t Periphy;
 //PinInput_t WKUPpin(WKUP_pin);
 PinInput_t ExternalPWR(ExternalPWR_Pin);
 PinInput_t Box1Opened(Sensor1_Pin);
+#if defined MusicBox
 PinInput_t Box2Opened(Sensor2_Pin);
+#elif defined Phone
+PinInput_t Box2Opened(Sensor1_Pin);
+#endif
 PinOutput_t BattMeasureSW(BattMeasSW_Pin);
 SteppingMotor_t Motor(MotorPins, MotorSHDN, MotorAngle, MotorRatio);
 LedSmooth_t Backlight(LED_PIN);
@@ -187,7 +191,15 @@ while(true) {
 
 #if defined Phone
     if(EvtMsk & EVT_DIAL_REDY) {
-        Uart.Printf("  Namber %u\r", Dialer.GetNamber());
+        switch(Dialer.GetNumber()) {
+            case 103:
+            case 03:
+                SndList.PlayRandomFileFromDir(Dir_03);
+            break;
+            default:
+                SndList.PlayRandomFileFromDir(Dir_Any);
+                break;
+        }
     }
 #endif
 
@@ -242,7 +254,7 @@ void BtnHandler(BtnEvt_t BtnEvt, uint8_t BtnID) {
 //    if(BtnEvt == beShortPress) Uart.Printf("Btn %u Short\r", BtnID);
 //    if(BtnEvt == beLongPress)  Uart.Printf("Btn %u Long\r", BtnID);
 //    if(BtnEvt == beRelease)    Uart.Printf("Btn %u Release\r", BtnID);
-    if(BtnEvt == beRepeat)    Uart.Printf("Btn %u Repeat\r", BtnID);
+//    if(BtnEvt == beRepeat)    Uart.Printf("Btn %u Repeat\r", BtnID);
 //    if(BtnEvt == beClick)      Uart.Printf("Btn %u Click\r", BtnID);
 //    if(BtnEvt == beDoubleClick)Uart.Printf("Btn %u DoubleClick\r", BtnID);
 

@@ -26,7 +26,7 @@
 
 #define IRQ_En_Delay_MS         20
 #define Disk_Poll_Period_MS     100
-#define EndNamber_TimeOut_MS    1000
+#define EndNumber_TimeOut_MS    1500
 
 typedef enum {deUnlockIRQ, deDiskPoll, deSendEvt} DialerEvt_t;
 
@@ -35,9 +35,10 @@ void LockTmrCallback(void *p);
 void DiskTmrCallback(void *p);
 void SendEvtTmrCallback(void *p);
 
-class Dialer_t {
+class Dial_t {
 private:
-    uint8_t Namber = 0;
+    uint8_t Numeral = 0;
+    uint64_t Number = 0;
     virtual_timer_t LockTmr, DiskTmr, SendEvtTmr;
     thread_t *IPAppThd;
     eventmask_t EvtEnd;
@@ -45,18 +46,28 @@ private:
     bool DiskIsArmed() {
         return PinIsLo(Dial_Disk_GPIO, Dial_Disk_PIN);
     }
+    void CalculateNumber() {
+        if (Numeral == 10) Numeral = 0;
+        Number = Number*10 + Numeral;
+        Numeral = 0;
+    }
 public:
+
+    PinIrq_t DialIRQ(Dial_Namber_GPIO, Dial_Namber_PIN, pudPullUp);
     void Init();
     void SetupSeqEndEvt(eventmask_t AEvt) {
         IPAppThd = chThdGetSelfX();
         EvtEnd = AEvt;
     }
-    uint32_t GetNamber() {
-        return Namber;
+    uint64_t GetNumber() {
+        uint64_t temp = Number;
+//        Uart.Printf("Namber %u\r", Number);
+        Number = 0;
+        return temp;
     }
     // Inner use
     void IProcessSequenceI(DialerEvt_t DialerEvt);
     inline void IIrqPinHandler();
 };
 
-extern Dialer_t Dialer;
+extern Dial_t Dialer;
