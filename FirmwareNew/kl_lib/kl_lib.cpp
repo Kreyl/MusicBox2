@@ -265,12 +265,12 @@ void TmrKLCallback(void *p) {
 #endif
 
 #if HW_RandF205 // =================== HW Random for F205 ======================
-uint32_t Random(uint32_t TopValue) {
+uint32_t Random(uint32_t LowInclusive, uint32_t HighInclusive) {
     rccEnableAHB2(RCC_AHB2ENR_RNGEN, FALSE);    // Enable clock
     RNG->CR |= RNG_CR_RNGEN;                    // Enable generator
     while(!(RNG->SR & RNG_SR_DRDY));            // Wait until ready
     uint32_t Rnd = RNG->DR;
-    Rnd = Rnd % (TopValue + 1);
+    Rnd = Rnd % (HighInclusive + 1 - LowInclusive) + LowInclusive;
     rccDisableAHB2(RCC_AHB2ENR_RNGEN, FALSE);   // Stop clock
     return Rnd;
 }

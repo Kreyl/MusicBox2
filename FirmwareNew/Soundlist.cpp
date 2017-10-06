@@ -45,7 +45,7 @@ void SndList_t::PlayRandomFileFromDir(const char* DirName) {
     if (DirList[indx].FilesCnt == 2 and DirList[indx].LastN == 0) Number = 1;
     else if (DirList[indx].FilesCnt > 2) {   // Get random number if count > 2
         do {
-            Number = Random(DirList[indx].FilesCnt-1);      // [0; Cnt-1]
+            Number = Random(0, DirList[indx].FilesCnt-1);      // [0; Cnt-1]
         } while(Number == DirList[indx].LastN);    // skip same as previous
     }
 //    Uart.Printf("Random=%d\r", Number);
@@ -83,6 +83,10 @@ void SndList_t::PlayRandomFileFromDir(const char* DirName) {
             } // if Len>4
         } // Filename o
     } // while true
+}
+void SndList_t::DelayAndPlayRandomFileFromDir(const systime_t Delay_MS, const char* DirName) {
+    chThdSleepMilliseconds(Delay_MS);
+    PlayRandomFileFromDir(DirName);
 }
 
 int SndList_t::DirIndxInList(const char* DirName) {

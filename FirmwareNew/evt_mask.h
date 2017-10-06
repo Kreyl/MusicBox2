@@ -18,8 +18,14 @@
 #define EVT_ADC_DONE            EVENT_MASK(7)
 
 #define EVT_BOX1_CLOSED         EVENT_MASK(10)
-#define EVT_BOX2_CLOSED         EVENT_MASK(11)
-#define EVT_DIAL_REDY           EVENT_MASK(12)
+#define EVT_BOX1_OPENED         EVENT_MASK(11)
+#define EVT_BOX2_CLOSED         EVENT_MASK(12)
+#define EVT_BOX2_OPENED         EVENT_MASK(13)
+#define EVT_DIAL_REDY           EVENT_MASK(14)
+#define EVT_DIAL_ARMED          EVENT_MASK(15)
+
+#define EVT_OFF_TimeOut         EVENT_MASK(25)
+#define EVT_WAIT_TimeOut        EVENT_MASK(26)
 
 
 #endif /* EVT_MASK_H_ */

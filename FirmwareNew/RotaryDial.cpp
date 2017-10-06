@@ -22,7 +22,7 @@ void DiskTmrCallback(void *p) {
 }
 void SendEvtTmrCallback(void *p) {
     chSysLockFromISR();
-    ((Dial_t*)p)->IProcessSequenceI(deSendEvt);
+    ((Dial_t*)p)->IProcessSequenceI(deSendEndEvt);
     chSysUnlockFromISR();
 }
 
@@ -49,6 +49,8 @@ void Dial_t::IIrqPinHandler() {     // Interrupt caused by Low level on IRQ_Pin
 // =========================== Implementation ==================================
 
 void Dial_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
+    static bool DiskWasArmed = false;
+    static bool EvtEndWasSend = false;
     switch(DialerEvt) {
         case deUnlockIRQ:
             DialIRQ.EnableIrq(IRQ_PRIO_LOW);
@@ -57,6 +59,10 @@ void Dial_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
             if (DiskIsArmed() and !DiskWasArmed) {
                 DiskWasArmed = true;
 //                Uart.PrintfI("  Disk armed\r");
+                if (!EvtEndWasSend) {
+                    EvtEndWasSend = true;
+                    if(IPAppThd != nullptr) chEvtSignalI(IPAppThd, EvtArm);
+                }
                 if (chVTIsArmedI(&SendEvtTmr)) chVTResetI(&SendEvtTmr);
             } else if (!DiskIsArmed() and DiskWasArmed) {
                 DiskWasArmed = false;
@@ -66,7 +72,8 @@ void Dial_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
             }
             chVTSetI(&DiskTmr, MS2ST(Disk_Poll_Period_MS), DiskTmrCallback, this);
             break;
-        case deSendEvt:
+        case deSendEndEvt:
+            EvtEndWasSend = false;
             if(IPAppThd != nullptr) chEvtSignalI(IPAppThd, EvtEnd);
             break;
         default: break;

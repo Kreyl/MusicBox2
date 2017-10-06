@@ -33,10 +33,12 @@ PinInput_t Box2Opened(Sensor1_Pin);
 PinOutput_t BattMeasureSW(BattMeasSW_Pin);
 SteppingMotor_t Motor(MotorPins, MotorSHDN, MotorAngle, MotorRatio);
 LedSmooth_t Backlight(LED_PIN);
+TmrKL_t TmrOFF { MS2ST(OFF_delay_MS), EVT_OFF_TimeOut, tktOneShot };
+TmrKL_t TmrWait { EVT_WAIT_TimeOut, tktOneShot };
 //Dialer_t Dialer;
 
 enum AppState_t {
-    asOff, asBeep, asPlay,
+    asOff, asBeep, asProcNumber, asWaiting, asPlay, asStop, asSecondStop,
 };
 AppState_t State = asOff;
 
@@ -85,15 +87,19 @@ int main() {
     // Setup outputs
     Periphy.InitSwich();
 
+    // Timers
+    TmrOFF.Init();
+    TmrWait.Init();
+
     WakeUp();
     // USB related
     MassStorage.Init();
 
 #if defined Phone
     Dialer.Init();
-    Dialer.SetupSeqEndEvt(EVT_DIAL_REDY);
+    Dialer.SetupSeqEvents(EVT_DIAL_REDY, EVT_DIAL_ARMED);
     State = asBeep;
-    Sound.Play("Sys/beep_8.mp3");
+    Sound.Play(BeepTrack);
 #endif
 
     // ==== Main cycle ====
@@ -118,6 +124,7 @@ void WakeUp() {
 
     if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
         SndList.PlayRandomFileFromDir(PlayDir);
+        State = asPlay;
 //        Backlight.StartOrContinue(lsqFadeIn);
     }
     else if (ExternalPWR.IsHi()) App.SignalEvt(EVT_USB_CONNECTED);
@@ -169,17 +176,21 @@ while(true) {
     eventmask_t EvtMsk = chEvtWaitAny(ALL_EVENTS);
 
     if(EvtMsk & EVT_PLAY_ENDS) {
-        if (!ExternalPWR.IsHi()){
 //        if (!Periphy._5V_is_here()){
+        if (!ExternalPWR.IsHi()) {
 #if defined MusicBox
-            SndList.PlayRandomFileFromDir(PlayDir);
+            if (State != asStop)
+                SndList.PlayRandomFileFromDir(PlayDir);
 #elif defined Phone
             switch(State) {
                 case asBeep:
-                    SndList.PlayRandomFileFromDir(PlayDir);
+                    Sound.Play(BeepTrack);
+                    break;
+                case asWaiting:
+                    Sound.Play(WaitTrack);
                     break;
                 case asPlay:
-                    Sound.Play("Sys/busy.mp3");
+                    Sound.Play(BusyTrack);
                     break;
                 default: break;
             }
@@ -192,30 +203,62 @@ while(true) {
         while(BtnGetEvt(&EInfo) == retvOk) BtnHandler(EInfo.Type, EInfo.BtnID);
     }
 
-    if(EvtMsk & EVT_BOX1_CLOSED) {
-        if (!Box2Opened.IsHi() and !ExternalPWR.IsHi()){
-            ShutDown();
-        }
+    if( (EvtMsk & EVT_BOX1_CLOSED) or (EvtMsk & EVT_BOX2_CLOSED) ) {
+        TmrOFF.Start();
+        Sound.Stop();
+        TmrWait.Stop();
+        Motor.Stop();
+        if (State == asBeep)
+            State = asSecondStop;
+        else
+            State = asStop;
     }
-    if(EvtMsk & EVT_BOX2_CLOSED) {
-        if (!Box1Opened.IsHi() and !ExternalPWR.IsHi()){
-            ShutDown();
+    if( (EvtMsk & EVT_BOX1_OPENED) or (EvtMsk & EVT_BOX2_OPENED) ) {
+#if defined MusicBox
+        Motor.Start();
+        SndList.PlayRandomFileFromDir(PlayDir);
+        State = asPlay;
+#elif defined Phone
+        if (State == asSecondStop)
+            SndList.PlayRandomFileFromDir(PlayDir);
+        else {
+            Sound.Play(BeepTrack);
         }
+        State = asBeep;
+#endif
+    }
+    if(EvtMsk & EVT_OFF_TimeOut) {
+//        if (!WKUPpin.IsHi()){
+        if (!Box1Opened.IsHi() and !Box2Opened.IsHi() and !ExternalPWR.IsHi())
+            ShutDown();
     }
 
 #if defined Phone
+    if(EvtMsk & EVT_DIAL_ARMED) {
+        if (State != asPlay) {
+        State = asProcNumber;
+        Sound.Stop();
+        }
+    }
     if(EvtMsk & EVT_DIAL_REDY) {
-        if (!ExternalPWR.IsHi()){
-            State = asPlay;
-            switch(Dialer.GetNumber()) {
-                case 103:
-                case 03:
-                    SndList.PlayRandomFileFromDir(Dir_03);
-                    break;
-                default:
-                    SndList.PlayRandomFileFromDir(Dir_Any);
-                    break;
-            }
+        if (!ExternalPWR.IsHi() and State != asPlay) {
+            volatile systime_t PlayDelay_MS = Random(minWait_MS, maxWait_MS);
+            Uart.Printf("PlayDelay=%uMS\r", PlayDelay_MS);
+            TmrWait.Start(MS2ST(PlayDelay_MS));
+            Sound.Play(WaitTrack);
+            State = asWaiting;
+        }
+    }
+    if(EvtMsk & EVT_WAIT_TimeOut) {
+        State = asPlay;
+        switch(Dialer.GetNumber()) {
+            case 0x1A3: // 103
+            case 0xA3:  // 03
+                SndList.PlayRandomFileFromDir(Dir_03);
+                break;
+            default:
+                SndList.PlayRandomFileFromDir(Dir_Any);
+                break;
         }
     }
 #endif
@@ -290,29 +333,19 @@ void BtnHandler(BtnEvt_t BtnEvt, uint8_t BtnID) {
 }
 
 void ShutDown() {
-    Sound.Stop();
-    Motor.Stop();
-    chThdSleepMilliseconds(700);
-//    if (!WKUPpin.IsHi()){
-    if (!Box1Opened.IsHi() and !Box2Opened.IsHi() and !ExternalPWR.IsHi()){
-        Sound.Shutdown();
-        chSysLock();
-        Uart.PrintfNow("Sleep\r\r");
-        Sound.Shutdown();
+    Sound.Shutdown();
+    chSysLock();
+    Uart.PrintfNow("Sleep\r\r");
+    Sound.Shutdown();
 //        Backlight.SetBrightness(0);
 //        Motor.Sleep();
-        Periphy.OFF();
-        BackupSpc::EnableAccess();
-        BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber(PlayDir));
-        BackupSpc::WriteBackupRegister(VolumeBKP, Sound.GetVolume());
-        Sleep::EnableWakeupPin();
-        Sleep::EnterStandby();
-        chSysUnlock();
-    }
-    else {
-        Motor.Start();
-        SndList.PlayRandomFileFromDir(PlayDir);
-    }
+    Periphy.OFF();
+    BackupSpc::EnableAccess();
+    BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber(PlayDir));
+    BackupSpc::WriteBackupRegister(VolumeBKP, Sound.GetVolume());
+    Sleep::EnableWakeupPin();
+    Sleep::EnterStandby();
+    chSysUnlock();
 }
 
 // Snsors
@@ -322,12 +355,14 @@ void Process5VSns(PinSnsState_t *PState, uint32_t Len) {
     else if(PState[0] == pssFalling) App.SignalEvt(EVT_USB_DISCONNECTED);
 }
 void Process3VSns1(PinSnsState_t *PState, uint32_t Len) {
-//    Uart.Printf("  %S\r", __FUNCTION__);
     if(PState[0] == pssFalling) App.SignalEvt(EVT_BOX1_CLOSED);
+    else if (PState[0] == pssRising) App.SignalEvt(EVT_BOX1_OPENED);
 }
 void Process3VSns2(PinSnsState_t *PState, uint32_t Len) {
-//    Uart.Printf("  %S\r", __FUNCTION__);
+#if !defined Phone
     if(PState[0] == pssFalling) App.SignalEvt(EVT_BOX2_CLOSED);
+    else if (PState[0] == pssRising) App.SignalEvt(EVT_BOX2_OPENED);
+#endif
 }
 
 #if UART_RX_ENABLED // ================= Command processing ====================

@@ -282,7 +282,7 @@ public:
 #if defined STM32F2XX
 #define HW_RandF205    TRUE
 // Returns [0; TopValue]
-uint32_t Random(uint32_t TopValue);
+uint32_t Random(uint32_t LowInclusive, uint32_t HighInclusive);
 #else
 static inline int Random(int LowInclusive, int HighInclusive) {
     return (rand() % (HighInclusive + 1 - LowInclusive)) + LowInclusive;

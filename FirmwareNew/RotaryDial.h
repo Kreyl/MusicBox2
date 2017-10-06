@@ -26,12 +26,14 @@
 #error "RotaryDial.h: not selected IRQ pin"
 #endif
 
+#define HexadecimalOut          TRUE    // Number "03" = 0xA3
+// else Decimal Output
 
 #define IRQ_En_Delay_MS         20
 #define Disk_Poll_Period_MS     100
 #define EndNumber_TimeOut_MS    1500
 
-typedef enum {deUnlockIRQ, deDiskPoll, deSendEvt} DialerEvt_t;
+typedef enum {deUnlockIRQ, deDiskPoll, deSendEndEvt} DialerEvt_t;
 
 // VirtualTimers callback
 void LockTmrCallback(void *p);
@@ -44,21 +46,25 @@ private:
     uint64_t Number = 0;
     virtual_timer_t LockTmr, DiskTmr, SendEvtTmr;
     thread_t *IPAppThd;
-    eventmask_t EvtEnd;
-    bool DiskWasArmed = false;
+    eventmask_t EvtArm, EvtEnd;
     bool DiskIsArmed() {
         return PinIsLo(Dial_Disk_GPIO, Dial_Disk_PIN);
     }
     void CalculateNumber() {
+#ifdef HexadecimalOut
+        Number = Number << 4 | Numeral;
+#else
         if (Numeral == 10) Numeral = 0;
         Number = Number*10 + Numeral;
+#endif
         Numeral = 0;
     }
 public:
     void Init();
-    void SetupSeqEndEvt(eventmask_t AEvt) {
+    void SetupSeqEvents(eventmask_t AEndEvt, eventmask_t AArmEvt) {
         IPAppThd = chThdGetSelfX();
-        EvtEnd = AEvt;
+        EvtEnd = AEndEvt;
+        EvtArm = AArmEvt;
     }
     uint64_t GetNumber() {
         uint64_t temp = Number;

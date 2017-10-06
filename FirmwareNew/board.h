@@ -17,10 +17,17 @@
 // Default Settings
 #if defined MusicBox
 #define APP_NAME        "MusicBox"
+#define OFF_delay_MS    700
 #elif defined Phone
 #define APP_NAME        "Phone"
+#define OFF_delay_MS    3000
 #define Dir_03          "03"
 #define Dir_Any         "Any"
+#define BeepTrack       "Sys/beep_32.mp3"   // длинный гудок
+#define BusyTrack       "Sys/busy.mp3"      // "занято"
+#define WaitTrack       "Sys/wait.mp3"      // "ожидание"
+#define minWait_MS      3000
+#define maxWait_MS      15000
 #endif
 #define PlayDir         "0:\\"
 #define DEF_VolLevel    170

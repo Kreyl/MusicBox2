@@ -32,6 +32,7 @@ private:
     FRESULT CountFilesInDir(const char* DirName, uint32_t *PCnt);
 public:
     void PlayRandomFileFromDir(const char* DirName);
+    void DelayAndPlayRandomFileFromDir(systime_t Delay_MS, const char* DirName);
     FRESULT UpdateDir(const char* DirName) {
         int indx = DirIndxInList(DirName);
         DirList[indx].LastN = -1;
