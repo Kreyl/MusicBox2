@@ -61,7 +61,7 @@ public:
     SteppingMotor_t(MotorSetupPins_t AMotor, uint8_t APinSHDN, uint8_t AStepAngle, uint16_t AGearRatio) :
         IMotor(AMotor), PinSHDN(APinSHDN), StepAngle(AStepAngle), GearRatio(AGearRatio) {}
 
-    void Init(const PowerDelay_t Delay = pdDelay) {
+    void Init(const PowerDelay_t Delay = pdNoDelay) {
         PinSetupOut(IMotor.PGpio, IMotor.PinA1, omPushPull);
         PinSetupOut(IMotor.PGpio, IMotor.PinA2, omPushPull);
         PinSetupOut(IMotor.PGpio, IMotor.PinB1, omPushPull);
@@ -102,12 +102,11 @@ public:
         Stop();
         PinSetLo(IMotor.PGpio, PinSHDN);
     }
+
     // Inner use
-    void StepperTmrCallbakHandler() {
-        chSysLockFromISR();
+    void IStepperTmrCallbakHandlerI() {
         StepperTmrStsrtI();
         TaskI();
-        chSysUnlockFromISR();
     }
 };
 

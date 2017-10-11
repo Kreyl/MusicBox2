@@ -2,7 +2,7 @@
  * RotaryDial.cpp
  *
  *  Created on: 07 сент. 2017 г.
- *      Author: Elessar
+ *      Author: Elessar, Eldalim
  */
 
 #include "RotaryDial.h"
@@ -10,6 +10,7 @@
 Dial_t Dialer;
 PinIrq_t DialIRQ(Dial_Namber_GPIO, Dial_Namber_PIN, pudPullUp);
 
+// ======================== VirtualTimers callback =============================
 void LockTmrCallback(void *p) {
     chSysLockFromISR();
     ((Dial_t*)p)->IProcessSequenceI(deUnlockIRQ);
@@ -47,6 +48,36 @@ void Dial_t::IIrqPinHandler() {     // Interrupt caused by Low level on IRQ_Pin
 }
 
 // =========================== Implementation ==================================
+uint64_t ConvertTextToNumber(const char *Str) {
+    uint64_t Number = 0;
+    while (*Str != 0) {
+#ifdef HexadecimalOut
+        Number <<= 4;
+#else
+        Number *= 10;
+#endif
+        switch (*Str) {
+            case '1': Number += 1; break;
+            case '2': Number += 2; break;
+            case '3': Number += 3; break;
+            case '4': Number += 4; break;
+            case '5': Number += 5; break;
+            case '6': Number += 6; break;
+            case '7': Number += 7; break;
+            case '8': Number += 8; break;
+            case '9': Number += 9; break;
+#ifdef HexadecimalOut
+            case '0': Number += 0x0A; break;
+#else
+            case '0': break;
+#endif
+            default : break;
+        }
+        Str++;
+    }
+    return Number;
+}
+
 
 void Dial_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
     static bool DiskWasArmed = false;

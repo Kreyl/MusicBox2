@@ -97,7 +97,7 @@ int main() {
 
 #if defined Phone
     Dialer.Init();
-    Dialer.SetupSeqEvents(EVT_DIAL_REDY, EVT_DIAL_ARMED);
+    Dialer.SetupSeqEvents(EVT_DIAL_ARMED, EVT_DIAL_REDY);
     State = asBeep;
     Sound.Play(BeepTrack);
 #endif
@@ -111,7 +111,7 @@ void WakeUp() {
     Periphy.ON();
     chThdSleepMilliseconds(200);    // Let power to stabilize
     // Stepping Motor
-    Motor.Init(pdNoDelay);
+    Motor.Init();
     SD.Init();      // No power delay
     // Sound
     Sound.Init();
@@ -219,12 +219,14 @@ while(true) {
         SndList.PlayRandomFileFromDir(PlayDir);
         State = asPlay;
 #elif defined Phone
-        if (State == asSecondStop)
+        if (State == asSecondStop) {
             SndList.PlayRandomFileFromDir(PlayDir);
+            State = asPlay;
+        }
         else {
             Sound.Play(BeepTrack);
+            State = asBeep;
         }
-        State = asBeep;
 #endif
     }
     if(EvtMsk & EVT_OFF_TimeOut) {

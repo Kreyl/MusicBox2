@@ -2,7 +2,7 @@
  * RotaryDial.h
  *
  *  Created on: 07 сент. 2017 г.
- *      Author: Elessar
+ *      Author: Elessar, Eldalim
  */
 
 #pragma once
@@ -35,10 +35,13 @@
 
 typedef enum {deUnlockIRQ, deDiskPoll, deSendEndEvt} DialerEvt_t;
 
+uint64_t ConvertTextToNumber(const char *Str);
+
 // VirtualTimers callback
 void LockTmrCallback(void *p);
 void DiskTmrCallback(void *p);
 void SendEvtTmrCallback(void *p);
+
 
 class Dial_t {
 private:
@@ -59,9 +62,10 @@ private:
 #endif
         Numeral = 0;
     }
+
 public:
     void Init();
-    void SetupSeqEvents(eventmask_t AEndEvt, eventmask_t AArmEvt) {
+    void SetupSeqEvents(eventmask_t AArmEvt, eventmask_t AEndEvt) {
         IPAppThd = chThdGetSelfX();
         EvtEnd = AEndEvt;
         EvtArm = AArmEvt;

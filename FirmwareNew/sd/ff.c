@@ -95,7 +95,7 @@
 #include "ff.h"			/* FatFs configurations and declarations */
 #include "diskio.h"		/* Declarations of low level disk I/O functions */
 
-extern void PrintfC(const char *format, ...);
+//extern void PrintfC(const char *format, ...);
 
 /*--------------------------------------------------------------------------
 

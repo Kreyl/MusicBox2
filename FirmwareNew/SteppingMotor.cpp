@@ -8,7 +8,9 @@
 #include "SteppingMotor.h"
 
 void StepperTmrCallback(void *p) {
-    reinterpret_cast<SteppingMotor_t*>(p)->StepperTmrCallbakHandler();
+    chSysLockFromISR();
+    reinterpret_cast<SteppingMotor_t*>(p)->IStepperTmrCallbakHandlerI();
+    chSysUnlockFromISR();
 }
 
 
