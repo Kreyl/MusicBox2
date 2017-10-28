@@ -92,7 +92,7 @@
 #define LED_PIN         { GPIOB, 3, TIM2, 2, invNotInverted, omPushPull, 512 }
 
 // WS2812
-#define LEDWS_PIN       GPIOB, 5, omPushPull, pudNone, AF5
+#define LEDWS_PIN       GPIOB, 5, omPushPull, pudNone, AF6
 
 // Stepping Motor
 #define MotorPins       { GPIOB, 6, 7, 8, 9 }
@@ -143,7 +143,7 @@
 #if 1 // =========================== SPI =======================================
 #define VS_SPI          SPI2
 #define VS_AF           AF5
-#define LEDWS_SPI       SPI1
+#define LEDWS_SPI       SPI3
 #endif
 
 #if 1 // ========================== USART ======================================
@@ -196,8 +196,8 @@
                         STM32_DMA_CR_TCIE         /* Enable Transmission Complete IRQ */
 
 // ==== SPI3 ====
-#define LEDWS_DMA       STM32_DMA2_STREAM5
-#define LEDWS_DMA_CHNL  3   // Dummy
+#define LEDWS_DMA       STM32_DMA1_STREAM7
+#define LEDWS_DMA_CHNL  0   // Dummy
 
 #if ADC_REQUIRED
 /* DMA request mapped on this DMA channel only if the corresponding remapping bit is cleared in the SYSCFG_CFGR1
