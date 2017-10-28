@@ -103,6 +103,12 @@ typedef void (*ftVoidVoid)(void);
 typedef void (*ftVoidPVoid)(void*p);
 typedef void (*ftVoidPVoidLen)(void*p, uint32_t Len);
 
+// Virtual class for IRQ handlers and timer callbacks
+class IrqHandler_t {
+public:
+    virtual void IIrqHandler() = 0;
+};
+
 // ==== Math ====
 #define MIN(a, b)   ( ((a)<(b))? (a) : (b) )
 #define MAX(a, b)   ( ((a)>(b))? (a) : (b) )
@@ -210,7 +216,6 @@ static inline uint32_t GetUniqID3() {
 #endif
 
 #if 1 // ======================= Virtual Timer =================================
-#define TIMER_KL    TRUE
 /*
  * Example:
  * TmrKL_t TmrCheckBtn {MS2ST(54), EVT_BUTTONS, tktPeriodic};
@@ -221,35 +226,38 @@ void TmrKLCallback(void *p);    // Universal VirtualTimer callback
 
 enum TmrKLType_t {tktOneShot, tktPeriodic};
 
-class TmrKL_t {
+class TmrKL_t : private IrqHandler_t {
 private:
     virtual_timer_t Tmr;
-    void StartI() { chVTSetI(&Tmr, Period, TmrKLCallback, this); }
+    void StartI() { chVTSetI(&Tmr, Period, TmrKLCallback, this); }  // Will be reset before start
     thread_t *PThread;
     systime_t Period;
     eventmask_t EvtMsk;
     TmrKLType_t TmrType;
+    void IIrqHandler() {    // Call it inside callback
+        chEvtSignalI(PThread, EvtMsk);
+        if(TmrType == tktPeriodic) StartI();
+    }
 public:
     void InitAndStart(thread_t *APThread) {
         PThread = APThread;
-        Start();
+        StartOrRestart();
     }
     void InitAndStart() {
         PThread = chThdGetSelfX();
-        Start();
+        StartOrRestart();
     }
 
     void Init(thread_t *APThread) { PThread = APThread; }
     void Init() { PThread = chThdGetSelfX(); }
 
-    void Start() {
+    void StartOrRestart() {
         chSysLock();
         StartI();
         chSysUnlock();
     }
-    void Start(systime_t NewPeriod) {
+    void StartOrRestart(systime_t NewPeriod) {
         chSysLock();
-        chVTResetI(&Tmr);
         Period = NewPeriod;
         StartI();
         chSysUnlock();
@@ -260,16 +268,10 @@ public:
         chSysUnlock();
     }
     void Stop() { chVTReset(&Tmr); }
-    void Restart() {
-        chVTReset(&Tmr);
-        Start();
-    }
-    void CallbackHandler() {    // Call it inside callback
-        chSysLockFromISR();
-        chEvtSignalI(PThread, EvtMsk);
-        if(TmrType == tktPeriodic) StartI();
-        chSysUnlockFromISR();
-    }
+
+    void SetNewPeriod_ms(uint32_t NewPeriod) { Period = MS2ST(NewPeriod); }
+    void SetNewPeriod_s(uint32_t NewPeriod) { Period = S2ST(NewPeriod); }
+
     TmrKL_t(systime_t APeriod, eventmask_t AEvtMsk, TmrKLType_t AType) :
         PThread(nullptr), Period(APeriod), EvtMsk(AEvtMsk), TmrType(AType) {}
     // Dummy period is set
@@ -1053,15 +1055,15 @@ static inline void ClearStandbyFlag() { PWR->CR |= PWR_CR_CSBF; }
 #if 1 // ============================== SPI ====================================
 enum CPHA_t {cphaFirstEdge, cphaSecondEdge};
 enum CPOL_t {cpolIdleLow, cpolIdleHigh};
-enum SpiBaudrate_t {
-    sbFdiv2   = 0b000,
-    sbFdiv4   = 0b001,
-    sbFdiv8   = 0b010,
-    sbFdiv16  = 0b011,
-    sbFdiv32  = 0b100,
-    sbFdiv64  = 0b101,
-    sbFdiv128 = 0b110,
-    sbFdiv256 = 0b111,
+enum SpiClkDivider_t {
+    sclkDiv2   = 0b000,
+    sclkDiv4   = 0b001,
+    sclkDiv8   = 0b010,
+    sclkDiv16  = 0b011,
+    sclkDiv32  = 0b100,
+    sclkDiv64  = 0b101,
+    sclkDiv128 = 0b110,
+    sclkDiv256 = 0b111,
 };
 
 class Spi_t {
@@ -1071,7 +1073,7 @@ public:
     Spi_t(SPI_TypeDef *ASpi) : PSpi(ASpi) {}
     // Example: boMSB, cpolIdleLow, cphaFirstEdge, sbFdiv2, bitn8
     void Setup(BitOrder_t BitOrder, CPOL_t CPOL, CPHA_t CPHA,
-            SpiBaudrate_t Baudrate, BitNumber_t BitNumber = bitn8) const {
+            SpiClkDivider_t Baudrate, BitNumber_t BitNumber = bitn8) const {
         // Clocking
         if      (PSpi == SPI1) { rccEnableSPI1(FALSE); }
 #ifdef SPI2

@@ -21,10 +21,10 @@
 #define SEQ_1               0b11111000  // 0xF8
 #define SEQ_0               0b11000000  // 0xC0
 
-#define SEQ_00              0x8080
-#define SEQ_01              0x80E0
-#define SEQ_10              0xE080
-#define SEQ_11              0xE0E0
+#define SEQ_00              0xC0C0//0x8080
+#define SEQ_01              0xC0F8//0x80E0
+#define SEQ_10              0xF8C0//0xE080
+#define SEQ_11              0xF8F8//0xE0E0
 
 
 LedWs_t LedWs;
@@ -39,8 +39,7 @@ void LedTxcIrq(void *p, uint32_t flags) {
 
 void LedWs_t::Init() {
     PinSetupAlterFunc(LEDWS_PIN);
-//    ISpi.Setup(boMSB, cpolIdleLow, cphaFirstEdge, sclkDiv2, bitn16);
-    ISpi.Setup(boMSB, cpolIdleLow, cphaFirstEdge, sbFdiv2);
+    ISpi.Setup(boMSB, cpolIdleLow, cphaFirstEdge, sclkDiv2, bitn16);
     ISpi.Enable();
     ISpi.EnableTxDma();
 
@@ -157,7 +156,7 @@ void Effects_t::Init() {
 }
 
 
-void Effects_t::AllTogetherNow(Color_t Color) {
+void Effects_t::AllTogetherNow(ColorWS_t Color) {
     IState = effIdle;
     for(uint32_t i=0; i<LED_CNT; i++) LedWs.ICurrentClr[i] = Color;
     LedWs.ISetCurrentColors();
@@ -165,13 +164,13 @@ void Effects_t::AllTogetherNow(Color_t Color) {
 }
 void Effects_t::AllTogetherNow(ColorHSV_t Color) {
     IState = effIdle;
-    Color_t rgb = Color.ToRGB();
+    ColorWS_t rgb = Color.ToRGB();
     for(uint32_t i=0; i<LED_CNT; i++) LedWs.ICurrentClr[i] = rgb;
     LedWs.ISetCurrentColors();
     App.SignalEvt(EVT_LED_DONE);
 }
 
-void Effects_t::AllTogetherSmoothly(Color_t Color, uint32_t ASmoothValue) {
+void Effects_t::AllTogetherSmoothly(ColorWS_t Color, uint32_t ASmoothValue) {
     if(ASmoothValue == 0) AllTogetherNow(Color);
     else {
         chSysLock();
@@ -185,7 +184,7 @@ void Effects_t::AllTogetherSmoothly(Color_t Color, uint32_t ASmoothValue) {
     }
 }
 
-void Effects_t::ChunkRunningRandom(Color_t Color, uint32_t NLeds, uint32_t ASmoothValue) {
+void Effects_t::ChunkRunningRandom(ColorWS_t Color, uint32_t NLeds, uint32_t ASmoothValue) {
     chSysLock();
     for(uint32_t i=0; i<CHUNK_CNT; i++) {
         Chunk[i].Color = Color;

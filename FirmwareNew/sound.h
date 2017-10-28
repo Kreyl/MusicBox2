@@ -31,7 +31,7 @@
 // SPI
 #define VS_SPI          SPI2
 #define VS_AF           AF5
-#define VS_SPI_RCC_EN() rccEnableSPI2(FALSE)
+//#define VS_SPI_RCC_EN() rccEnableSPI2(FALSE)
 // DMA
 #define VS_DMA          STM32_DMA1_STREAM4
 #define VS_DMA_CHNL     0
@@ -108,7 +108,7 @@ struct VsBuf_t {
 #define VS_EVT_DREQ_IRQ     (eventmask_t)16
 
 extern PinIrq_t IDreq;
-extern  Spi_t ISpi;
+extern Spi_t ISpi;
 
 class Sound_t {
 private:

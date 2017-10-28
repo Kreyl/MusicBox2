@@ -15,8 +15,10 @@
 #include "sound.h"
 #include "Soundlist.h"
 #include "SteppingMotor.h"
-#include "ws2812b.h"
 #include "RotaryDial.h"
+#include "ws2812b.h"
+#include "LEDs.h"
+
 
 #if 1 // ======================== Variables and defines ========================
 App_t App;
@@ -35,7 +37,9 @@ SteppingMotor_t Motor(MotorPins, MotorSHDN, MotorAngle, MotorRatio);
 LedSmooth_t Backlight(LED_PIN);
 TmrKL_t TmrOFF { MS2ST(OFF_delay_MS), EVT_OFF_TimeOut, tktOneShot };
 TmrKL_t TmrWait { EVT_WAIT_TimeOut, tktOneShot };
+LEDs_t LEDs;
 //Dialer_t Dialer;
+
 
 enum AppState_t {
     asOff, asBeep, asProcNumber, asWaiting, asPlay, asStop, asSecondStop,
@@ -71,6 +75,7 @@ int main() {
     // ==== Init Hard & Soft ====
     Uart.Init(115200, UART_GPIO, UART_TX_PIN, UART_GPIO, UART_RX_PIN);
     Uart.Printf("\r%S %S\r", APP_NAME, BUILD_TIME);
+    Uart.Printf("LEDs CNT %u\r", LED_CNT);
     Clk.PrintFreqs();
     // Report problem with clock if any
     if(ClkResult) Uart.Printf("Clock failure\r");
@@ -92,8 +97,16 @@ int main() {
     TmrWait.Init();
 
     WakeUp();
+
     // USB related
     MassStorage.Init();
+
+    // LEDs
+    LEDs.Init();
+    LEDs.SetupSeqEndEvt(EVT_LED_DONE);
+    LEDs.SetProfile(DEF_LEDsProf);
+    LEDs.SetAll(StartIntensity, StartProcessTime, StartPause);
+    LEDs.Start();
 
 #if defined Phone
     Dialer.Init();
@@ -198,13 +211,17 @@ while(true) {
         }
     }
 
+    if(EvtMsk & EVT_LED_DONE) {
+        LEDs.GenerationParam();
+    }
+
     if(EvtMsk & EVT_BUTTONS) {
         BtnEvtInfo_t EInfo;
         while(BtnGetEvt(&EInfo) == retvOk) BtnHandler(EInfo.Type, EInfo.BtnID);
     }
 
     if( (EvtMsk & EVT_BOX1_CLOSED) or (EvtMsk & EVT_BOX2_CLOSED) ) {
-        TmrOFF.Start();
+        TmrOFF.StartOrRestart();
         Sound.Stop();
         TmrWait.Stop();
         Motor.Stop();

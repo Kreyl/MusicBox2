@@ -19,7 +19,7 @@
 #include "hal.h"
 #include "kl_lib.h"
 #include "uart.h"
-#include "color.h"
+//#include "color.h"
 
 #ifndef LED_CNT
 #define LED_CNT             5   // Number of WS2812 LEDs
@@ -33,9 +33,9 @@
 #define DATA_W_CNT          ((DATA_BIT_CNT + 15) / 16)
 #define TOTAL_W_CNT         (DATA_W_CNT + RST_W_CNT)
 
-//typedef struct {
-//    uint8_t R, G, B;
-//} Color_t;
+typedef struct {
+    uint8_t R, G, B;
+} ColorWS_t;
 
 class LedWs_t {
 private:
@@ -46,7 +46,7 @@ private:
 public:
     void Init();
     // Inner use
-    Color_t ICurrentClr[LED_CNT];
+    ColorWS_t ICurrentClr[LED_CNT];
     void ISetCurrentColors();
     void ITmrHandlerI();
 };
@@ -63,7 +63,7 @@ private:
     int GetPrevN(int Current, int N);
 public:
     int Start, End, NLeds;
-    Color_t Color;
+    ColorWS_t Color;
     LedChunk_t(int AStart, int AEnd) {
         Start = AStart;
         End = AEnd;
@@ -85,13 +85,13 @@ private:
 public:
     void Init();
     // Effects
-    void AllTogetherNow(Color_t Color);
+    void AllTogetherNow(ColorWS_t Color);
     void AllTogetherNow(ColorHSV_t Color);
-    void AllTogetherSmoothly(Color_t Color, uint32_t ASmoothValue);
-    void ChunkRunningRandom(Color_t Color, uint32_t NLeds, uint32_t ASmoothValue);
+    void AllTogetherSmoothly(ColorWS_t Color, uint32_t ASmoothValue);
+    void ChunkRunningRandom(ColorWS_t Color, uint32_t NLeds, uint32_t ASmoothValue);
     // Inner use
     uint32_t ICalcDelayN(uint32_t n);
-    Color_t DesiredClr[LED_CNT];
+    ColorWS_t DesiredClr[LED_CNT];
     void ITask();
 };
 

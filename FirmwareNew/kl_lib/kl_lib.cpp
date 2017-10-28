@@ -257,10 +257,12 @@ void Timer_t::SetUpdateFrequencyChangingTopValue(uint32_t FreqHz) const {
 }
 #endif
 
-#if TIMER_KL // ======================= Virtual Timers =========================
+#if 1 // ========================= Virtual Timers ==============================
 // Universal VirtualTimer callback
 void TmrKLCallback(void *p) {
-    reinterpret_cast<TmrKL_t*>(p)->CallbackHandler();
+    chSysLockFromISR();
+    ((IrqHandler_t*)p)->IIrqHandler();
+    chSysUnlockFromISR();
 }
 #endif
 

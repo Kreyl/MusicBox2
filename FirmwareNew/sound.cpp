@@ -113,7 +113,7 @@ void Sound_t::Init() {
 #endif
 
     // ==== SPI init ====
-    ISpi.Setup(boMSB, cpolIdleLow, cphaFirstEdge, sbFdiv8);
+    ISpi.Setup(boMSB, cpolIdleLow, cphaFirstEdge, sclkDiv8);
     ISpi.Enable();
     ISpi.EnableTxDma();
 

@@ -11,8 +11,8 @@
 
 // ==== General ====
 #define BOARD_NAME      "MusicBox2_v2.2"
-//#define MusicBox
-#define Phone
+#define MusicBox
+//#define Phone
 
 // Default Settings
 #if defined MusicBox
@@ -29,9 +29,17 @@
 #define minWait_MS      3000
 #define maxWait_MS      15000
 #endif
+// Saund
 #define PlayDir         "0:\\"
 #define DEF_VolLevel    170
+// Motor
 #define DEF_MotorSpeed  -600  // 16 [об/мин * 0,1]
+// RGB LEDs
+#define DEF_LEDsProf    prColor
+#define LED_CNT         15  // Number of WS2812 LEDs
+#define StartIntensity      15
+#define StartProcessTime    800
+#define StartPause          150
 
 // Backup Registers
 #define TrackNumberBKP  0
@@ -84,8 +92,7 @@
 #define LED_PIN         { GPIOB, 3, TIM2, 2, invNotInverted, omPushPull, 512 }
 
 // WS2812
-#define LEDWS_PIN       GPIOB, 5, omPushPull, pudNone, AF0
-#define WS_is_EN_PIN    GPIOB, 4, pudPullUp
+#define LEDWS_PIN       GPIOB, 5, omPushPull, pudNone, AF5
 
 // Stepping Motor
 #define MotorPins       { GPIOB, 6, 7, 8, 9 }
@@ -136,7 +143,7 @@
 #if 1 // =========================== SPI =======================================
 #define VS_SPI          SPI2
 #define VS_AF           AF5
-#define LEDWS_SPI       SPI3
+#define LEDWS_SPI       SPI1
 #endif
 
 #if 1 // ========================== USART ======================================
@@ -167,7 +174,7 @@
 #endif
 
 #if 1 // =========================== DMA =======================================
-//STM32F205 Reference Manual s.159,160
+//STM32F205 Reference Manual s.179,180
 #define STM32_DMA_REQUIRED  TRUE
 // ==== Uart ====
 // Remap is made automatically if required
@@ -176,7 +183,6 @@
 #define UART_DMA_CHNL   4
 
 #if I2C_REQUIRED // ==== I2C ====
-
 #endif
 
 // ==== SPI2 ==== ==== Sound VS1011 ====
@@ -190,8 +196,8 @@
                         STM32_DMA_CR_TCIE         /* Enable Transmission Complete IRQ */
 
 // ==== SPI3 ====
-#define LEDWS_DMA       STM32_DMA1_STREAM5
-#define LEDWS_DMA_CHNL  0   // Dummy
+#define LEDWS_DMA       STM32_DMA2_STREAM5
+#define LEDWS_DMA_CHNL  3   // Dummy
 
 #if ADC_REQUIRED
 /* DMA request mapped on this DMA channel only if the corresponding remapping bit is cleared in the SYSCFG_CFGR1
