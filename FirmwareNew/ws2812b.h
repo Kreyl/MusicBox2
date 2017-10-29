@@ -11,7 +11,7 @@
  * ========== WS2812 control module ==========
  * Only basic command "SetCurrentColors" is implemented, all other is up to
  * higher level software.
- * SPI input frequency should be 16 MHz (which results in 8MHz bitrate)
+ * SPI input frequency should be 8 MHz (which results in 4MHz bitrate)
  */
 
 
@@ -21,11 +21,11 @@
 #include "uart.h"
 
 #ifndef LED_CNT
-#define LED_CNT             5   // Number of WS2812 LEDs
+#define LED_CNT             24   // Number of WS2812 LEDs
 #endif
-
-#define SEQ_LEN             8
-#define RST_W_CNT           4   // zero words after data to produce reset
+// Do not touch
+#define SEQ_LEN             4
+#define RST_W_CNT           4 // zero words before and after data to produce reset
 
 // SPI16 Buffer (no tuning required)
 #define DATA_BIT_CNT        (LED_CNT * 3 * 8 * SEQ_LEN)   // Each led has 3 channels 8 bit each
