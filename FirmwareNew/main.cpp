@@ -180,6 +180,17 @@ void App_t::LoadSettings(const char* SettingsFileName) {
         Motor.SetSpeed(DEF_MotorSpeed, smHalftep);   // smHalftep / smFullStep
         Motor.Start();
     }
+
+    // Load LEDs Settings
+//    uint8_t R_min = 0, G_min = 0, B_min = 0;
+//    uint8_t R_max = 0, G_max = 0, B_max = 0;
+//    uint8_t Result = retvFail;
+//    if (iniRead(SettingsFileName, "RGB_LEDs", "R_min", &R_min) == retvOk) {
+//        LEDs.SetLimit_MAX
+//    } else {
+//
+//    }
+
 }
 
 
@@ -212,7 +223,7 @@ while(true) {
     }
 
     if(EvtMsk & EVT_LED_DONE) {
-        LEDs.GenerationParam();
+//        LEDs.GenerationParam();
     }
 
     if(EvtMsk & EVT_BUTTONS) {

@@ -68,9 +68,10 @@ void LEDs_t::GenerationParam() {
     switch(Profile) {
         case prWhite:
             CurrNum.R = ExcludingRandom(0, LED_CNT-1, PrevNum.R);
-            DesiredClr[PrevNum.R].R = Attenuations(MINintensity, Attenuation);
-            DesiredClr[PrevNum.R].G = Attenuations(MINintensity, Attenuation);
-            DesiredClr[PrevNum.R].B = Attenuations(MINintensity, Attenuation);
+            Val = Attenuations(MINintensity, Attenuation);
+            DesiredClr[PrevNum.R].R = Val;
+            DesiredClr[PrevNum.R].G = Val;
+            DesiredClr[PrevNum.R].B = Val;
 
             Val = Attenuations(Random(MINintensity, MAXintensity), Attenuation);
             DesiredClr[CurrNum.R].R = Val;
@@ -92,12 +93,12 @@ void LEDs_t::GenerationParam() {
             CurrNum.G = ExcludingRandom(0, LED_CNT-1, PrevNum.G);
             CurrNum.B = ExcludingRandom(0, LED_CNT-1, PrevNum.B);
 
-            DesiredClr[PrevNum.R].R = Attenuations(MINintensityR, Attenuation);
-            DesiredClr[PrevNum.G].G = Attenuations(MINintensityG, Attenuation);
+            DesiredClr[PrevNum.R].R = Attenuations(MINintensityR, Attenuation+100);
+            DesiredClr[PrevNum.G].G = Attenuations(MINintensityG, Attenuation)+80;
             DesiredClr[PrevNum.B].B = Attenuations(MINintensityB, Attenuation);
 
-            DesiredClr[CurrNum.R].R = Attenuations(Random(MINintensityR, MAXintensityR), Attenuation);
-            DesiredClr[CurrNum.G].G = Attenuations(Random(MINintensityG, MAXintensityG), Attenuation);
+            DesiredClr[CurrNum.R].R = Attenuations(Random(MINintensityR, MAXintensityR), Attenuation+100);
+            DesiredClr[CurrNum.G].G = Attenuations(Random(MINintensityG, MAXintensityG), Attenuation+80);
             DesiredClr[CurrNum.B].B = Attenuations(Random(MINintensityB, MAXintensityB), Attenuation);
 
             StepIntensity[CurrNum.R].R = CalculateStepIntensity(LedWs.ICurrentClr[CurrNum.R].R, DesiredClr[CurrNum.R].R, Random(MINproc_time, MAXproc_time));

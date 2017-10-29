@@ -37,7 +37,7 @@
 // RGB LEDs
 #define DEF_LEDsProf    prColor
 #define LED_CNT         15  // Number of WS2812 LEDs
-#define StartIntensity      15
+#define StartIntensity      5
 #define StartProcessTime    800
 #define StartPause          150
 

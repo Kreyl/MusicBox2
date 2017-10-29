@@ -14,7 +14,7 @@
 
 #define Channels_CNT    LED_CNT * 3 // for RGB LEDs
 #define LEDparamNone    UINT16_MAX
-//#define Attenuations_EN true
+#define Attenuations_EN true
 
 enum LEDsProfile_t { prWhite, prColor, prEnd };
 
@@ -38,9 +38,9 @@ private:
     uint16_t *PPauseCounter, *PIntensityCounter, *PStepIntensity;
     uint8_t  Attenuation = 0;
 
-    Color_t DesiredClr[LED_CNT];
+    Color8_t DesiredClr[LED_CNT];
     uint8_t *PDesiredClr, *PCurrentClr;
-    Color_t CurrNum, PrevNum;  // Current Number & Previous Number
+    Color8_t CurrNum, PrevNum;  // Current Number & Previous Number
     uint8_t Profile;
 
     void IEndSequence() {
