@@ -6,6 +6,8 @@
  */
 #include "LEDs.h"
 
+IntelLeds_t LedWs;
+
 static inline int ExcludingRandom(int LowInclusive, int HighInclusive, int ExcludingInclusive) {
     int Result;
     do {

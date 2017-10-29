@@ -14,13 +14,16 @@
 
 #define Channels_CNT    LED_CNT * 3 // for RGB LEDs
 #define LEDparamNone    UINT16_MAX
-#define Attenuations_EN true
+//#define Attenuations_EN true
 
 enum LEDsProfile_t { prWhite, prColor, prEnd };
 
 typedef struct {
     uint16_t R, G, B;
 } Color16_t;
+typedef struct {
+    uint8_t R, G, B;
+} Color8_t;
 
 
 class LEDs_t : private IrqHandler_t {
@@ -35,9 +38,9 @@ private:
     uint16_t *PPauseCounter, *PIntensityCounter, *PStepIntensity;
     uint8_t  Attenuation = 0;
 
-    ColorWS_t DesiredClr[LED_CNT] = {{0}};
+    Color_t DesiredClr[LED_CNT];
     uint8_t *PDesiredClr, *PCurrentClr;
-    ColorWS_t CurrNum, PrevNum;  // Current Number & Previous Number
+    Color_t CurrNum, PrevNum;  // Current Number & Previous Number
     uint8_t Profile;
 
     void IEndSequence() {
