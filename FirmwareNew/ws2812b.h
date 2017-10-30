@@ -44,6 +44,14 @@ private:
     void AppendBitsMadeOfByte(uint8_t Byte);
 public:
     void Init();
+    bool AreOff() {
+        for(uint8_t i=0; i<LED_CNT; i++) {
+            if(ICurrentClr[i].R != 0) return false;
+            if(ICurrentClr[i].G != 0) return false;
+            if(ICurrentClr[i].B != 0) return false;
+        }
+        return true;
+    }
     // Inner use
     ColorWS_t ICurrentClr[LED_CNT];
     void ISetCurrentColors();

@@ -45,7 +45,7 @@ void SndList_t::PlayRandomFileFromDir(const char* DirName) {
     if (DirList[indx].FilesCnt == 2 and DirList[indx].LastN == 0) Number = 1;
     else if (DirList[indx].FilesCnt > 2) {   // Get random number if count > 2
         do {
-            Number = Random(0, DirList[indx].FilesCnt-1);      // [0; Cnt-1]
+            Number = Random::Generate(0, DirList[indx].FilesCnt-1);      // [0; Cnt-1]
         } while(Number == DirList[indx].LastN);    // skip same as previous
     }
 //    Uart.Printf("Random=%d\r", Number);

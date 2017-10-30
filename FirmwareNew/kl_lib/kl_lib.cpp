@@ -266,16 +266,37 @@ void TmrKLCallback(void *p) {
 }
 #endif
 
-#if HW_RandF205 // =================== HW Random for F205 ======================
-uint32_t Random(uint32_t LowInclusive, uint32_t HighInclusive) {
-    rccEnableAHB2(RCC_AHB2ENR_RNGEN, FALSE);    // Enable clock
-    RNG->CR |= RNG_CR_RNGEN;                    // Enable generator
-    while(!(RNG->SR & RNG_SR_DRDY));            // Wait until ready
-    uint32_t Rnd = RNG->DR;
-    Rnd = Rnd % (HighInclusive + 1 - LowInclusive) + LowInclusive;
-    rccDisableAHB2(RCC_AHB2ENR_RNGEN, FALSE);   // Stop clock
-    return Rnd;
+#if 1 // =========================== True Random ===============================
+#if defined STM32F2XX || defined STM32L4XX
+namespace Random {
+void TrueInit() {
+    rccEnableAHB2(RCC_AHB2ENR_RNGEN, FALSE); // Enable clock
+    RNG->CR = RNG_CR_RNGEN; // Enable random generator
+    while((RNG->SR & RNG_SR_DRDY) == 0);     // Wait for new random value
 }
+
+void TrueDeinit() {
+    RNG->CR = 0;
+    rccDisableAHB2(RCC_AHB2ENR_RNGEN, FALSE);
+}
+// TrueGenerate
+uint32_t Generate(uint32_t LowInclusive, uint32_t HighInclusive) {
+    while((RNG->SR & RNG_SR_DRDY) == 0);    // Wait for new random value
+    uint32_t dw = RNG->DR;
+    uint32_t rslt = (dw % (HighInclusive + 1 - LowInclusive)) + LowInclusive;
+//    PrintfI("%u; l %u; h %u; r %u\r", dw, LowInclusive, HighInclusive, rslt);
+    return rslt;
+}
+
+void SeedWithTrue() {
+    while((RNG->SR & RNG_SR_DRDY) == 0);    // Wait for new random value
+    uint32_t dw = RNG->DR;
+    srand(dw);
+}
+
+} // namespace
+#endif
+
 #endif
 
 #if CH_DBG_ENABLED // ========================= DEBUG ==========================

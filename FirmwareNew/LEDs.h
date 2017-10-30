@@ -18,13 +18,19 @@
 
 enum LEDsProfile_t { prWhite, prColor, prEnd };
 
-typedef struct {
-    uint16_t R, G, B;
+typedef union {
+    uint16_t W;
+    struct {
+        uint16_t R, G, B;
+    };
 } Color16_t;
-typedef struct {
-    uint8_t R, G, B;
+typedef union {
+    uint8_t W;
+    struct {
+        uint8_t R, G, B;
+    };
 } Color8_t;
-
+typedef enum {cpR, cpG, cpB, cpW, cpRGB} ColorParams_t;
 
 class LEDs_t : private IrqHandler_t {
 private:
@@ -32,11 +38,12 @@ private:
     eventmask_t EvtEnd;
     virtual_timer_t ITmr;
 
-    Color16_t PauseCounter[LED_CNT] = {{1}};
+    Color16_t PauseCounter[LED_CNT] = {{0}};
     Color16_t IntensityCounter[LED_CNT] = {{0}};
     Color16_t StepIntensity[LED_CNT] = {{1}};
     uint16_t *PPauseCounter, *PIntensityCounter, *PStepIntensity;
-    uint8_t  Attenuation = 0;
+    Color8_t Attenuation = {0};
+    Color8_t Intensity_MIN, Intensity_MAX;
 
     Color8_t DesiredClr[LED_CNT];
     uint8_t *PDesiredClr, *PCurrentClr;
@@ -89,5 +96,35 @@ public:
         chSysUnlock();
         return Result;
     };
-    void SetAttenuation(uint8_t APercent) { Attenuation = APercent; }
+    void SetAttenuation(uint8_t APercent, ColorParams_t Params = cpRGB) {
+        if (APercent > 100) APercent = 100;
+        switch(Params) {
+            case cpR: Attenuation.R = APercent; break;
+            case cpG: Attenuation.G = APercent; break;
+            case cpB: Attenuation.B = APercent; break;
+            case cpW: Attenuation.W = APercent; break;
+            case cpRGB:
+                Attenuation.R = APercent;
+                Attenuation.G = APercent;
+                Attenuation.B = APercent;
+                break;
+        }
+    }
+    void SetIntensityLevel(uint8_t APercent, ColorParams_t Params = cpRGB) {
+        if (APercent < 100)
+            APercent = 100 - APercent;
+        else
+            APercent = 0;
+        switch(Params) {
+            case cpR: Attenuation.R = APercent; break;
+            case cpG: Attenuation.G = APercent; break;
+            case cpB: Attenuation.B = APercent; break;
+            case cpW: Attenuation.W = APercent; break;
+            case cpRGB:
+                Attenuation.R = APercent;
+                Attenuation.G = APercent;
+                Attenuation.B = APercent;
+                break;
+        }
+    }
 };

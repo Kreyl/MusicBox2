@@ -80,6 +80,9 @@ int main() {
     // Report problem with clock if any
     if(ClkResult) Uart.Printf("Clock failure\r");
 
+    // Random
+    Random::TrueInit();
+
     // Battery: ADC
     PinSetupAnalog(BattMeas_Pin);
     BattMeasureSW.Init();
@@ -106,6 +109,7 @@ int main() {
     LEDs.SetupSeqEndEvt(EVT_LED_DONE);
     LEDs.SetProfile(DEF_LEDsProf);
     LEDs.SetAll(StartIntensity, StartProcessTime, StartPause);
+    LEDs.GenerationParam();
     LEDs.Start();
 
 #if defined Phone
@@ -182,15 +186,20 @@ void App_t::LoadSettings(const char* SettingsFileName) {
     }
 
     // Load LEDs Settings
-//    uint8_t R_min = 0, G_min = 0, B_min = 0;
-//    uint8_t R_max = 0, G_max = 0, B_max = 0;
-//    uint8_t Result = retvFail;
-//    if (iniRead(SettingsFileName, "RGB_LEDs", "R_min", &R_min) == retvOk) {
-//        LEDs.SetLimit_MAX
-//    } else {
-//
-//    }
+    uint8_t Level = 0;
+//    if (iniRead(SettingsFileName, "RGB_LEDs", "Intensity", &Level) == retvOk)
+//        LEDs.SetIntensityLevel(Level, cpR);
+//    else LEDs.SetIntensityLevel(DEF_Level_B);
 
+    if (iniRead(SettingsFileName, "RGB_LEDs", "Level R", &Level) == retvOk)
+        LEDs.SetIntensityLevel(Level, cpR);
+    else LEDs.SetIntensityLevel(DEF_Level_R);
+    if (iniRead(SettingsFileName, "RGB_LEDs", "Level G", &Level) == retvOk)
+        LEDs.SetIntensityLevel(Level, cpG);
+    else LEDs.SetIntensityLevel(DEF_Level_R);
+    if (iniRead(SettingsFileName, "RGB_LEDs", "Level B", &Level) == retvOk)
+        LEDs.SetIntensityLevel(Level, cpR);
+    else LEDs.SetIntensityLevel(DEF_Level_B);
 }
 
 
@@ -223,7 +232,8 @@ while(true) {
     }
 
     if(EvtMsk & EVT_LED_DONE) {
-//        LEDs.GenerationParam();
+        LEDs.GenerationParam();
+        LEDs.GenerationParam();
     }
 
     if(EvtMsk & EVT_BUTTONS) {

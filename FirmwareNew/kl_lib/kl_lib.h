@@ -281,16 +281,25 @@ public:
 #endif
 
 #if 1 // ========================== Random =====================================
-#if defined STM32F2XX
-#define HW_RandF205    TRUE
-// Returns [0; TopValue]
-uint32_t Random(uint32_t LowInclusive, uint32_t HighInclusive);
+namespace Random {
+// True random
+#if defined STM32F2XX || defined STM32L4XX
+void TrueInit();
+void TrueDeinit();
+// Generate truly random value
+uint32_t Generate(uint32_t LowInclusive, uint32_t HighInclusive); // TrueGenerate
+// Seed pseudo random with true random
+void SeedWithTrue();
 #else
-static inline int Random(int LowInclusive, int HighInclusive) {
-    return (rand() % (HighInclusive + 1 - LowInclusive)) + LowInclusive;
+// Generate pseudo-random value
+static inline long int Generate(long int LowInclusive, long int HighInclusive) {
+    uint32_t last = rand();
+    return (last % (HighInclusive + 1 - LowInclusive)) + LowInclusive;
 }
-static inline void RandomSeed(unsigned int Seed) { srand(Seed); }
+// Seed pseudo-random generator with new seed
+static inline void Seed(unsigned int Seed) { srand(Seed); }
 #endif
+} // namespace
 #endif
 
 #if 1 // =========================== Time ======================================

@@ -18,9 +18,9 @@
 #define MINintensity    15
 #define MAXintensity    255
 // ѕараметры динамики
-#define MINpause        1       // ѕуза межву изменени€ми €ркости [mS]
-#define MAXpause        500
-#define MINproc_time    300     // »нтервал изменени€ €ркости [mS]
-#define MAXproc_time    2000
+#define MINpause        0       // ѕуза межву изменени€ми €ркости [mS]
+#define MAXpause        250
+#define MINproc_time    200     // »нтервал изменени€ €ркости [mS]
+#define MAXproc_time    1000
 
 
