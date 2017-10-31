@@ -15,8 +15,8 @@
 #define MINintensityG   5
 #define MINintensityB   5
 // Яркость (Цветной вар.2 и Прогулочный)
-#define MINintensity    15
 #define MAXintensity    255
+#define MINintensity    5
 // Параметры динамики
 #define MINpause        0       // Пуза межву изменениями яркости [mS]
 #define MAXpause        250

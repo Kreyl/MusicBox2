@@ -4,6 +4,7 @@
  *  Created on: 26 мая 2017 г.
  *      Author: Elessar
  */
+
 #pragma once
 
 #include "ws2812b.h"
@@ -15,6 +16,14 @@
 #define Channels_CNT    LED_CNT * 3 // for RGB LEDs
 #define LEDparamNone    UINT16_MAX
 #define Attenuations_EN true
+
+#if Attenuations_EN
+#define Attenuations(brightness, percent)    (brightness-(uint16_t)(brightness*percent)/100)
+#else
+#define Attenuations(brightness, percent)    (brightness)       // пустышка
+#endif
+
+#define MAX_VAL         255
 
 enum LEDsProfile_t { prWhite, prColor, prEnd };
 
@@ -82,7 +91,7 @@ public:
     }
 
     void SetAll(uint16_t AIntensity, uint16_t ASpeed, uint16_t APause);
-    void SetByNumber(uint16_t AIntensity, uint16_t ASpeed, uint16_t APause, uint8_t ANumber);
+    void SetByChannelNumber(uint16_t AIntensity, uint16_t ASpeed, uint16_t APause, uint8_t ANumber);
     void GenerationParam();
     bool IsProcessing() {
         chSysLock();
@@ -96,6 +105,7 @@ public:
         chSysUnlock();
         return Result;
     };
+
     void SetAttenuation(uint8_t APercent, ColorParams_t Params = cpRGB) {
         if (APercent > 100) APercent = 100;
         switch(Params) {
@@ -127,4 +137,41 @@ public:
                 break;
         }
     }
+    void SetLimit_MIN(uint8_t APercent, ColorParams_t Params = cpRGB) {
+        if (APercent < 100)
+            APercent = 100 - APercent;
+        else
+            APercent = 0;
+        switch(Params) {
+            case cpR: Intensity_MIN.R = Attenuations(MAX_VAL, APercent); break;
+            case cpG: Intensity_MIN.G = Attenuations(MAX_VAL, APercent); break;
+            case cpB: Intensity_MIN.B = Attenuations(MAX_VAL, APercent); break;
+            case cpW: Intensity_MIN.W = Attenuations(MAX_VAL, APercent); break;
+            case cpRGB:
+                Intensity_MIN.R = Attenuations(MAX_VAL, APercent);
+                Intensity_MIN.G = Attenuations(MAX_VAL, APercent);
+                Intensity_MIN.B = Attenuations(MAX_VAL, APercent);
+                Uart.Printf("  Limit_MIN=%d\r ", Attenuations(MAX_VAL, APercent));
+                break;
+        }
+    }
+    void SetLimit_MAX(uint8_t APercent, ColorParams_t Params = cpRGB) {
+        if (APercent < 100)
+            APercent = 100 - APercent;
+        else
+            APercent = 0;
+        switch(Params) {
+            case cpR: Intensity_MAX.R = Attenuations(MAX_VAL, APercent); break;
+            case cpG: Intensity_MAX.G = Attenuations(MAX_VAL, APercent); break;
+            case cpB: Intensity_MAX.B = Attenuations(MAX_VAL, APercent); break;
+            case cpW: Intensity_MAX.W = Attenuations(MAX_VAL, APercent); break;
+            case cpRGB:
+                Intensity_MAX.R = Attenuations(MAX_VAL, APercent);
+                Intensity_MAX.G = Attenuations(MAX_VAL, APercent);
+                Intensity_MAX.B = Attenuations(MAX_VAL, APercent);
+                Uart.Printf("  Limit_MAX=%d\r ", Attenuations(MAX_VAL, APercent));
+                break;
+        }
+    }
+
 };

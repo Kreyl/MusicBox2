@@ -42,7 +42,8 @@ LEDs_t LEDs;
 
 
 enum AppState_t {
-    asOff, asBeep, asProcNumber, asWaiting, asPlay, asStop, asSecondStop,
+    asOff, asPlay, asStop,   // all
+    asBeep, asProcNumber, asWaiting, asSecondStop   // Phone
 };
 AppState_t State = asOff;
 
@@ -99,17 +100,10 @@ int main() {
     TmrOFF.Init();
     TmrWait.Init();
 
-    WakeUp();
-
-    // USB related
-    MassStorage.Init();
-
     // LEDs
     LEDs.Init();
     LEDs.SetupSeqEndEvt(EVT_LED_DONE);
     LEDs.SetProfile(DEF_LEDsProf);
-    LEDs.SetAll(StartIntensity, StartProcessTime, StartPause);
-    LEDs.GenerationParam();
     LEDs.Start();
 
 #if defined Phone
@@ -118,6 +112,15 @@ int main() {
     State = asBeep;
     Sound.Play(BeepTrack);
 #endif
+
+    WakeUp();
+
+    // USB related
+    MassStorage.Init();
+
+
+    LEDs.SetAll(StartIntensity, StartProcessTime, StartPause);
+    LEDs.GenerationParam();
 
     // ==== Main cycle ====
     App.ITask();
@@ -187,10 +190,6 @@ void App_t::LoadSettings(const char* SettingsFileName) {
 
     // Load LEDs Settings
     uint8_t Level = 0;
-//    if (iniRead(SettingsFileName, "RGB_LEDs", "Intensity", &Level) == retvOk)
-//        LEDs.SetIntensityLevel(Level, cpR);
-//    else LEDs.SetIntensityLevel(DEF_Level_B);
-
     if (iniRead(SettingsFileName, "RGB_LEDs", "Level R", &Level) == retvOk)
         LEDs.SetIntensityLevel(Level, cpR);
     else LEDs.SetIntensityLevel(DEF_Level_R);
@@ -200,6 +199,12 @@ void App_t::LoadSettings(const char* SettingsFileName) {
     if (iniRead(SettingsFileName, "RGB_LEDs", "Level B", &Level) == retvOk)
         LEDs.SetIntensityLevel(Level, cpR);
     else LEDs.SetIntensityLevel(DEF_Level_B);
+    if (iniRead(SettingsFileName, "RGB_LEDs", "Max Intensity", &Level) == retvOk)
+        LEDs.SetLimit_MIN(Level, cpRGB);
+    else LEDs.SetLimit_MAX(DEF_Limit_MAX);
+    if (iniRead(SettingsFileName, "RGB_LEDs", "Min Intensity", &Level) == retvOk)
+        LEDs.SetLimit_MIN(Level, cpRGB);
+    else LEDs.SetLimit_MIN(DEF_Limit_MIN);
 }
 
 
@@ -232,8 +237,10 @@ while(true) {
     }
 
     if(EvtMsk & EVT_LED_DONE) {
-        LEDs.GenerationParam();
-        LEDs.GenerationParam();
+        if (!ExternalPWR.IsHi()) {
+            LEDs.GenerationParam();
+            LEDs.GenerationParam();
+        }
     }
 
     if(EvtMsk & EVT_BUTTONS) {
@@ -246,10 +253,12 @@ while(true) {
         Sound.Stop();
         TmrWait.Stop();
         Motor.Stop();
+#if defined Phone
         if (State == asBeep)
             State = asSecondStop;
         else
             State = asStop;
+#endif
     }
     if( (EvtMsk & EVT_BOX1_OPENED) or (EvtMsk & EVT_BOX2_OPENED) ) {
 #if defined MusicBox
@@ -282,9 +291,9 @@ while(true) {
     }
     if(EvtMsk & EVT_DIAL_REDY) {
         if (!ExternalPWR.IsHi() and State != asPlay) {
-            volatile systime_t PlayDelay_MS = Random(minWait_MS, maxWait_MS);
+            volatile systime_t PlayDelay_MS = Random::Generate(minWait_MS, maxWait_MS);
             Uart.Printf("PlayDelay=%uMS\r", PlayDelay_MS);
-            TmrWait.Start(MS2ST(PlayDelay_MS));
+            TmrWait.StartOrRestart(MS2ST(PlayDelay_MS));
             Sound.Play(WaitTrack);
             State = asWaiting;
         }
@@ -314,7 +323,8 @@ while(true) {
     if(EvtMsk & EVT_USB_CONNECTED) {
         Sound.Stop();
         Motor.Stop();
-        Backlight.SetBrightness(0);
+        LEDs.SetAll(StopIntensity, StopProcessTime, StopPause);
+//        Backlight.SetBrightness(0);
         chSysLock();
         Clk.SetFreq48Mhz();
         chSysUnlock();
@@ -338,6 +348,8 @@ while(true) {
             SndList.UpdateDir(PlayDir);
             SndList.PlayRandomFileFromDir(PlayDir);
             Motor.Start();
+            LEDs.SetAll(StartIntensity, StartProcessTime, StartPause);
+            LEDs.GenerationParam();
 //            Backlight.StartOrContinue(lsqFadeIn);
         }
     }
@@ -449,6 +461,21 @@ void App_t::OnCmd(Shell_t *PShell) {
     }
     else if(PCmd->NameIs("MotorStop")) {
         Motor.Stop();
+        PShell->Ack(retvOk);
+    }
+
+    else if(PCmd->NameIs("SetLim_min")) {
+        if(PCmd->GetNextInt32(&Data) == retvOk) {
+            Uart.Printf("Data=%d\r ", Data);
+            LEDs.SetLimit_MIN(Data);
+        }
+        PShell->Ack(retvOk);
+    }
+    else if(PCmd->NameIs("SetLim_max")) {
+        if(PCmd->GetNextInt32(&Data) == retvOk) {
+            Uart.Printf("Data=%d\r ", Data);
+            LEDs.SetLimit_MAX(Data);
+        }
         PShell->Ack(retvOk);
     }
 

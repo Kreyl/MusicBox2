@@ -37,12 +37,17 @@
 // RGB LEDs
 #define DEF_LEDsProf    prColor
 #define LED_CNT         15  // Number of WS2812 LEDs
-#define StartIntensity      5
+#define StartIntensity      6
 #define StartProcessTime    200
 #define StartPause          0
-#define DEF_Level_R     5
+#define StopIntensity       0
+#define StopProcessTime     100
+#define StopPause           0
+#define DEF_Level_R     2
 #define DEF_Level_G     60
 #define DEF_Level_B     100
+#define DEF_Limit_MAX   100
+#define DEF_Limit_MIN   4
 
 // Backup Registers
 #define TrackNumberBKP  0

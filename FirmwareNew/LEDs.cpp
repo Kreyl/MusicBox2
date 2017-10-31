@@ -4,6 +4,7 @@
  *  Created on: 26 мая 2017 г.
  *      Author: Elessar
  */
+
 #include "LEDs.h"
 
 IntelLeds_t LedWs;
@@ -18,17 +19,6 @@ uint32_t ExcludingRandom(uint32_t ALowInclusive, uint32_t AHighInclusive, uint32
         } while (Result == AExcludingInclusive);
     return Result;
 }
-
-#if Attenuations_EN
-#define Attenuations(brightness, percent)    (brightness-(uint16_t)(brightness*percent)/100)
-//static inline uint8_t Attenuations(uint8_t ABrightness, uint8_t APercent) {
-//    uint8_t Result = ABrightness - (uint16_t)(ABrightness*APercent)/100;
-//    Uart.PrintfNow("AttenResult = %u (Brightness %u, Percent %u)\r", Result, ABrightness, APercent);
-//    return Result;
-//}
-#else
-#define Attenuations(brightness, percent)    (brightness)       // пустышка
-#endif
 
 
 void LEDs_t::Init() {
@@ -115,7 +105,7 @@ void LEDs_t::GenerationParam() {
             StepIntensity[CurrNum.R].R = CalculateStepIntensity(LedWs.ICurrentClr[CurrNum.R].R, DesiredClr[CurrNum.R].R, Random::Generate(MINproc_time, MAXproc_time));
             StepIntensity[CurrNum.G].G = CalculateStepIntensity(LedWs.ICurrentClr[CurrNum.G].G, DesiredClr[CurrNum.G].G, Random::Generate(MINproc_time, MAXproc_time));
             StepIntensity[CurrNum.B].B = CalculateStepIntensity(LedWs.ICurrentClr[CurrNum.B].B, DesiredClr[CurrNum.B].B, Random::Generate(MINproc_time, MAXproc_time));
-            Uart.PrintfNow("DesiredClr R%u G%u B%u\r", DesiredClr[CurrNum.R].R, DesiredClr[CurrNum.G].G, DesiredClr[CurrNum.B].B);
+//            Uart.PrintfNow("DesiredClr R%u G%u B%u\r", DesiredClr[CurrNum.R].R, DesiredClr[CurrNum.G].G, DesiredClr[CurrNum.B].B);
 //            Uart.PrintfNow("StepIntensity R%u G%u B%u\r", StepIntensity[CurrNum.R].R, StepIntensity[CurrNum.G].G, StepIntensity[CurrNum.B].B);
 //            Uart.PrintfNow("  IntensProcT R%u G%u B%u\r", StepIntensity[CurrNum.R].R*DesiredClr[CurrNum.R].R, StepIntensity[CurrNum.G].G*DesiredClr[CurrNum.G].G, StepIntensity[CurrNum.B].B*DesiredClr[CurrNum.B].B);
 
@@ -143,7 +133,7 @@ void LEDs_t::SetAll(uint16_t AIntensity, uint16_t AProcessTime, uint16_t APause)
     chSysUnlock();
 }
 
-void LEDs_t::SetByNumber(uint16_t AIntensity, uint16_t AProcessTime, uint16_t APause, uint8_t ANumber) {
+void LEDs_t::SetByChannelNumber(uint16_t AIntensity, uint16_t AProcessTime, uint16_t APause, uint8_t ANumber) {
     chSysLock();
     PDesiredClr[ANumber] = AIntensity;
     PStepIntensity[ANumber] = CalculateStepIntensity(PCurrentClr[ANumber], AIntensity, AProcessTime);
