@@ -48,6 +48,7 @@ enum AppState_t {
 AppState_t State = asOff;
 
 void BtnHandler(BtnEvt_t BtnEvt, uint8_t BtnID);
+void LoadSettings(const char* FileName);
 void WakeUp();
 void ShutDown();
 
@@ -56,7 +57,7 @@ void ShutDown();
 // =============================== Main ========================================
 
 int main() {
-    // ==== Init ====
+#if 1  // ==== Init ====
     // ==== Setup clock ====
     Clk.UpdateFreqValues();
     uint8_t ClkResult = retvFail;
@@ -81,9 +82,6 @@ int main() {
     // Report problem with clock if any
     if(ClkResult) Uart.Printf("Clock failure\r");
 
-    // Random
-    Random::TrueInit();
-
     // Battery: ADC
     PinSetupAnalog(BattMeas_Pin);
     BattMeasureSW.Init();
@@ -94,65 +92,66 @@ int main() {
     // Setup inputs
     SimpleSensors::Init();
     // Setup outputs
+    // Periphy
     Periphy.InitSwich();
+    Periphy.ON();
+    chThdSleepMilliseconds(200);    // Let power to stabilize
+
+    if (ExternalPWR.IsHi()) App.SignalEvt(EVT_USB_CONNECTED);
+    else if (!Box1Opened.IsHi() and !Box2Opened.IsHi()) ShutDown();
+
+    // Random
+    Random::TrueInit();
+
+    // SD
+    SD.Init();      // No power delay
+    LoadSettings("Settings.ini");
+
+    // USB related
+    MassStorage.Init();
+
+    // Sound
+    Sound.Init();
+    Sound.SetupSeqEndEvt(EVT_PLAY_ENDS);
 
     // Timers
     TmrOFF.Init();
-    TmrWait.Init();
 
+#if defined MusicBox
     // LEDs
     LEDs.Init();
     LEDs.SetupSeqEndEvt(EVT_LED_DONE);
     LEDs.SetProfile(DEF_LEDsProf);
     LEDs.Start();
-
-#if defined Phone
+    LEDs.SetAll(StartIntensity, StartProcessTime, StartPause);
+    LEDs.GenerationParam();
+//    Backlight.Init();
+//    Backlight.SetBrightness(0);
+//    Backlight.SetPwmFrequencyHz(1000);
+//    Backlight.StartOrContinue(lsqFadeIn);
+    // Stepping Motor
+    Motor.Init();
+    // Play
+    State = asPlay;
+    SndList.PlayRandomFileFromDir(PlayDir);
+#elif defined Phone
+    // Timers
+    TmrWait.Init();
+    // Dialer
     Dialer.Init();
     Dialer.SetupSeqEvents(EVT_DIAL_ARMED, EVT_DIAL_REDY);
+    // Play
     State = asBeep;
     Sound.Play(BeepTrack);
 #endif
 
-    WakeUp();
-
-    // USB related
-    MassStorage.Init();
-
-
-    LEDs.SetAll(StartIntensity, StartProcessTime, StartPause);
-    LEDs.GenerationParam();
-
+#endif
     // ==== Main cycle ====
     App.ITask();
 }
 
 
-void WakeUp() {
-    Periphy.ON();
-    chThdSleepMilliseconds(200);    // Let power to stabilize
-    // Stepping Motor
-    Motor.Init();
-    SD.Init();      // No power delay
-    // Sound
-    Sound.Init();
-    Sound.SetupSeqEndEvt(EVT_PLAY_ENDS);
-    // LED
-//    Backlight.Init();
-//    Backlight.SetBrightness(0);
-//    Backlight.SetPwmFrequencyHz(1000);
-    App.LoadSettings("Settings.ini");
-
-    if (Box1Opened.IsHi() or Box2Opened.IsHi()) {
-        SndList.PlayRandomFileFromDir(PlayDir);
-        State = asPlay;
-//        Backlight.StartOrContinue(lsqFadeIn);
-    }
-    else if (ExternalPWR.IsHi()) App.SignalEvt(EVT_USB_CONNECTED);
-    else ShutDown();
-}
-
-
-void App_t::LoadSettings(const char* SettingsFileName) {
+void LoadSettings(const char* SettingsFileName) {
     // Load Sound Settings
     uint8_t VolLevel = 0;
     if(Sleep::WasInStandby()) {
@@ -173,7 +172,7 @@ void App_t::LoadSettings(const char* SettingsFileName) {
             Sound.SetVolume(DEF_VolLevel);
         }
     }
-
+#if defined MusicBox
     // Load Motor Settings
     int32_t Speed = 0;
     if (iniRead(SettingsFileName, "Motor", "Speed", &Speed) == retvOk) {
@@ -205,6 +204,7 @@ void App_t::LoadSettings(const char* SettingsFileName) {
     if (iniRead(SettingsFileName, "RGB_LEDs", "Min Intensity", &Level) == retvOk)
         LEDs.SetLimit_MIN(Level, cpRGB);
     else LEDs.SetLimit_MIN(DEF_Limit_MIN);
+#endif
 }
 
 
@@ -237,10 +237,12 @@ while(true) {
     }
 
     if(EvtMsk & EVT_LED_DONE) {
+#if defined MusicBox
         if (!ExternalPWR.IsHi()) {
             LEDs.GenerationParam();
             LEDs.GenerationParam();
         }
+#endif
     }
 
     if(EvtMsk & EVT_BUTTONS) {
@@ -251,9 +253,9 @@ while(true) {
     if( (EvtMsk & EVT_BOX1_CLOSED) or (EvtMsk & EVT_BOX2_CLOSED) ) {
         TmrOFF.StartOrRestart();
         Sound.Stop();
-        TmrWait.Stop();
         Motor.Stop();
 #if defined Phone
+        TmrWait.Stop();
         if (State == asBeep)
             State = asSecondStop;
         else
@@ -385,12 +387,8 @@ void BtnHandler(BtnEvt_t BtnEvt, uint8_t BtnID) {
 }
 
 void ShutDown() {
-    Sound.Shutdown();
     chSysLock();
     Uart.PrintfNow("Sleep\r\r");
-    Sound.Shutdown();
-//        Backlight.SetBrightness(0);
-//        Motor.Sleep();
     Periphy.OFF();
     BackupSpc::EnableAccess();
     BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber(PlayDir));
@@ -428,16 +426,6 @@ void App_t::OnCmd(Shell_t *PShell) {
     }
     else if(PCmd->NameIs("Next")) {
         SndList.PlayRandomFileFromDir(PlayDir);
-        PShell->Ack(retvOk);
-    }
-
-    else if(PCmd->NameIs("PerON")) {
-        WakeUp();
-        PShell->Ack(retvOk);
-    }
-    else if(PCmd->NameIs("PerOFF")) {
-        Sound.Shutdown();
-        Periphy.OFF();
         PShell->Ack(retvOk);
     }
 

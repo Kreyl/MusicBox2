@@ -35,7 +35,6 @@ public:
 #if UART_RX_ENABLED
     void OnCmd(Shell_t *PShell);
 #endif
-    void LoadSettings(const char* FileName);
     // Inner use
     void ITask();
 };

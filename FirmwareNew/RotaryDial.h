@@ -26,7 +26,7 @@
 #error "RotaryDial.h: not selected IRQ pin"
 #endif
 
-#define HexadecimalOut          TRUE    // Number "03" = 0xA3
+#define HexadecimalOut          TRUE    // Example: number "03" = 0xA3
 // else Decimal Output
 
 #define IRQ_En_Delay_MS         20
