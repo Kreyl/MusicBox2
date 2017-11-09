@@ -27,7 +27,7 @@
 #endif
 
 #define HexadecimalOut          TRUE    // Example: number "03" = 0xA3
-// else Decimal Output
+/* else Decimal Output */
 
 #define IRQ_En_Delay_MS         20
 #define Disk_Poll_Period_MS     100
@@ -75,6 +75,11 @@ public:
 //        Uart.Printf("Namber %u\r", Number);
         Number = 0;
         return temp;
+    }
+    void ResetNumber() {
+        Numeral = 0;
+        Number = 0;
+        chVTReset(&SendEvtTmr);
     }
     // Inner use
     void IProcessSequenceI(DialerEvt_t DialerEvt);

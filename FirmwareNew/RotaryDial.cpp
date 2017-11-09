@@ -94,7 +94,7 @@ void Dial_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
                     EvtEndWasSend = true;
                     if(IPAppThd != nullptr) chEvtSignalI(IPAppThd, EvtArm);
                 }
-                if (chVTIsArmedI(&SendEvtTmr)) chVTResetI(&SendEvtTmr);
+                chVTResetI(&SendEvtTmr);
             } else if (!DiskIsArmed() and DiskWasArmed) {
                 DiskWasArmed = false;
 //                Uart.PrintfI("  Disk was armed\r");
@@ -105,7 +105,7 @@ void Dial_t::IProcessSequenceI(DialerEvt_t DialerEvt) {
             break;
         case deSendEndEvt:
             EvtEndWasSend = false;
-            if(IPAppThd != nullptr) chEvtSignalI(IPAppThd, EvtEnd);
+            if(IPAppThd != nullptr and Number != 0) chEvtSignalI(IPAppThd, EvtEnd);
             break;
         default: break;
     }

@@ -11,8 +11,8 @@
 
 // ==== General ====
 #define BOARD_NAME      "MusicBox2_v2.2"
-#define MusicBox
-//#define Phone
+//#define MusicBox
+#define Phone
 
 // Default Settings
 #if defined MusicBox
@@ -27,7 +27,7 @@
 #define BusyTrack       "Sys/busy.mp3"      // "занято"
 #define WaitTrack       "Sys/wait.mp3"      // "ожидание"
 #define minWait_MS      3000
-#define maxWait_MS      15000
+#define maxWait_MS      10000
 #endif
 // Saund
 #define PlayDir         "0:\\"

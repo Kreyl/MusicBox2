@@ -95,10 +95,7 @@ int main() {
     // Periphy
     Periphy.InitSwich();
     Periphy.ON();
-    chThdSleepMilliseconds(200);    // Let power to stabilize
-
-    if (ExternalPWR.IsHi()) App.SignalEvt(EVT_USB_CONNECTED);
-    else if (!Box1Opened.IsHi() and !Box2Opened.IsHi()) ShutDown();
+    chThdSleepMilliseconds(100);    // Let power to stabilize
 
     // Random
     Random::TrueInit();
@@ -106,6 +103,9 @@ int main() {
     // SD
     SD.Init();      // No power delay
     LoadSettings("Settings.ini");
+
+    if (ExternalPWR.IsHi()) App.SignalEvt(EVT_USB_CONNECTED);
+    else if (!Box1Opened.IsHi() and !Box2Opened.IsHi()) ShutDown(); // & Save Settings
 
     // USB related
     MassStorage.Init();
@@ -256,6 +256,7 @@ while(true) {
         Motor.Stop();
 #if defined Phone
         TmrWait.Stop();
+        Dialer.ResetNumber();
         if (State == asBeep)
             State = asSecondStop;
         else
@@ -306,6 +307,9 @@ while(true) {
             case 0x1A3: // 103
             case 0xA3:  // 03
                 SndList.PlayRandomFileFromDir(Dir_03);
+                break;
+            case 0x1 ... 0xA:   // 0 - 9
+                SndList.PlayRandomFileFromDir(PlayDir);
                 break;
             default:
                 SndList.PlayRandomFileFromDir(Dir_Any);
