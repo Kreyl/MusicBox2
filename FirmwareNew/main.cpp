@@ -49,7 +49,6 @@ AppState_t State = asOff;
 
 void BtnHandler(BtnEvt_t BtnEvt, uint8_t BtnID);
 void LoadSettings(const char* FileName);
-void WakeUp();
 void ShutDown();
 
 #endif
@@ -102,6 +101,11 @@ int main() {
 
     // SD
     SD.Init();      // No power delay
+
+    // Sound
+    Sound.Init();
+    Sound.SetupSeqEndEvt(EVT_PLAY_ENDS);
+
     LoadSettings("Settings.ini");
 
     if (ExternalPWR.IsHi()) App.SignalEvt(EVT_USB_CONNECTED);
@@ -109,10 +113,6 @@ int main() {
 
     // USB related
     MassStorage.Init();
-
-    // Sound
-    Sound.Init();
-    Sound.SetupSeqEndEvt(EVT_PLAY_ENDS);
 
     // Timers
     TmrOFF.Init();
@@ -391,12 +391,16 @@ void BtnHandler(BtnEvt_t BtnEvt, uint8_t BtnID) {
 }
 
 void ShutDown() {
+    uint8_t Volume = Sound.GetVolume();
+    Sound.SetVolume(0);
+    chThdSleepMilliseconds(50);
+    Sound.Shutdown();
     chSysLock();
     Uart.PrintfNow("Sleep\r\r");
     Periphy.OFF();
     BackupSpc::EnableAccess();
     BackupSpc::WriteBackupRegister(TrackNumberBKP, SndList.GetTrackNumber(PlayDir));
-    BackupSpc::WriteBackupRegister(VolumeBKP, Sound.GetVolume());
+    BackupSpc::WriteBackupRegister(VolumeBKP, Volume);
     Sleep::EnableWakeupPin();
     Sleep::EnterStandby();
     chSysUnlock();

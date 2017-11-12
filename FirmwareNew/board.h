@@ -11,8 +11,8 @@
 
 // ==== General ====
 #define BOARD_NAME      "MusicBox2_v2.2"
-//#define MusicBox
-#define Phone
+#define MusicBox
+//#define Phone
 
 // Default Settings
 #if defined MusicBox
